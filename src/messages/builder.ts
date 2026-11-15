@@ -1,5 +1,5 @@
 import { BinaryProtocol } from '../binary/index.js'
-import { MediaCrypto, type MediaType } from './media.js'
+import { MediaCrypto } from './media.js'
 import type { AnyMessageContent, MessageOptions } from './types.js'
 import type { BinaryNode } from '../types/index.js'
 

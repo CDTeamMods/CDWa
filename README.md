@@ -12,11 +12,11 @@ Inspirada no [WhiskeySockets/Baileys](https://github.com/WhiskeySockets/Baileys)
 
 ## 📚 Documentação Completa (Wiki)
 
-A documentação detalhada e guias práticos estão disponíveis na pasta **[`wiki/`](./wiki/Home.md)**:
-* 🚀 **[Guia de Início Rápido](./wiki/Getting-Started.md)**
-* 🔒 **[Arquitetura & Segurança Criptográfica](./wiki/Architecture-and-Security.md)**
-* 📩 **[Guia Completo de Envio de Mensagens](./wiki/Sending-Messages.md)**
-* 📡 **[Manipulação de Eventos & Reconexão](./wiki/Handling-Events.md)**
-* 🔑 **[Autenticação & Estado Seguro](./wiki/Authentication-and-State.md)**
+A documentação detalhada e guias práticos estão disponíveis na pasta **[`docs/`](./docs/Home.md)**:
+* 🚀 **[Guia de Início Rápido](./docs/Getting-Started.md)**
+* 🔒 **[Arquitetura & Segurança Criptográfica](./docs/Architecture-and-Security.md)**
+* 📩 **[Guia Completo de Envio de Mensagens](./docs/Sending-Messages.md)**
+* 📡 **[Manipulação de Eventos & Reconexão](./docs/Handling-Events.md)**
+* 🔑 **[Autenticação & Estado Seguro](./docs/Authentication-and-State.md)**
 
 ---

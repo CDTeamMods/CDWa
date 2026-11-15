@@ -19,7 +19,7 @@ export class WhatsAppClient extends EventEmitter {
   public socket: WhatsAppSocket
   public auth: AuthenticationState | null = null
   public signal: SignalEngine | null = null
-  private config: SocketConfig
+  public readonly config: SocketConfig
 
   constructor(config: SocketConfig = {}) {
     super()
