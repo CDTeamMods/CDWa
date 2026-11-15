@@ -36,6 +36,11 @@
       "types": "./dist/messages/index.d.ts",
       "import": "./dist/messages/index.js",
       "require": "./dist/messages/index.cjs"
+    },
+    "./safety": {
+      "types": "./dist/safety/index.d.ts",
+      "import": "./dist/safety/index.js",
+      "require": "./dist/safety/index.cjs"
     }
   },
   "files": [
@@ -67,6 +72,14 @@
   ],
   "author": "CDTeam",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CDTeamMods/CDWa.git"
+  },
+  "homepage": "https://cdteammods.github.io/CDWa/",
+  "bugs": {
+    "url": "https://github.com/CDTeamMods/CDWa/issues"
+  },
   "dependencies": {
     "@noble/ciphers": "^1.1.0",
     "@noble/curves": "^1.7.0",

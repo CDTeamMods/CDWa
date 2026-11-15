@@ -8,6 +8,7 @@ export default defineConfig({
     'signal/index': 'src/signal/index.ts',
     'binary/index': 'src/binary/index.ts',
     'messages/index': 'src/messages/index.ts',
+    'safety/index': 'src/safety/index.ts',
   },
   format: ['esm', 'cjs'],
   dts: true,

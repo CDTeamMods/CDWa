@@ -53,6 +53,16 @@ export interface SocketConfig {
     storagePassphrase?: string
     enableEncryptedStorage?: boolean
   }
+  safety?: {
+    /** Simulação de presença humana (digitando... / gravando áudio...) antes do envio */
+    simulateHumanBehavior?: boolean
+    /** Fila anti-flood com intervalo humano aleatório */
+    rateLimit?: boolean
+    /** Limite máximo de mensagens por minuto (Padrão: 25) */
+    maxMessagesPerMinute?: number
+    minDelayMs?: number
+    maxDelayMs?: number
+  }
 }
 
 export interface BinaryNodeAttributes {

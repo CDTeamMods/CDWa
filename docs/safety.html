@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Segurança - CDWA</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <a href="index.html" class="brand">
+      <span>🚀 CDWA</span>
+      <span class="brand-badge">v0.1.0</span>
+    </a>
+
+    <div class="nav-title">Primeiros Passos</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="index.html" class="nav-link">Visão Geral</a></li>
+      <li class="nav-item"><a href="getting-started.html" class="nav-link">Início Rápido</a></li>
+    </ul>
+
+    <div class="nav-title">Conceitos Centrais</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="architecture.html" class="nav-link">Arquitetura & Criptografia</a></li>
+      <li class="nav-item"><a href="authentication.html" class="nav-link">Autenticação & Estado</a></li>
+      <li class="nav-item"><a href="safety.html" class="nav-link active">Segurança 🛡️</a></li>
+    </ul>
+
+    <div class="nav-title">Desenvolvimento</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="sending-messages.html" class="nav-link">Envio de Mensagens</a></li>
+      <li class="nav-item"><a href="events.html" class="nav-link">Eventos & Conexão</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Wrapper -->
+  <div class="main-wrapper">
+    <header class="header">
+      <a href="index.html">← Voltar para Início</a>
+      <a href="https://github.com/CDTeamMods/CDWa" target="_blank" rel="noopener">GitHub ↗</a>
+    </header>
+
+    <main class="content">
+      <h1>Motor de Segurança 🛡️</h1>
+      <p>
+        O <strong>CDWA</strong> foi desenvolvido com um motor inteligente de proteção e segurança, reproduzindo com fidelidade o comportamento de um usuário humano no WhatsApp Web.
+      </p>
+
+      <div class="callout warning">
+        <div class="callout-title">Por que automações tradicionais falham?</div>
+        Sistemas automatizados antigos disparam dezenas de mensagens em milissegundos sem enviar presença ("digitando..."), sem marcar mensagens recebidas como lidas e com assinaturas de navegadores obsoletas. As heurísticas de proteção da Meta detectam esse padrão instantaneamente.
+      </div>
+
+      <h2>Os 4 Pilares de Segurança no CDWA</h2>
+
+      <h3>1. Simulação de Digitação Humana</h3>
+      <p>
+        Antes de disparar qualquer mensagem de texto, o CDWA emite o evento <code>composing</code> (digitando...) e aguarda um tempo proporcional à quantidade de caracteres da mensagem (~40 caracteres por segundo, com variação aleatória de jitter), finalizando com <code>paused</code>:
+      </p>
+      <ul>
+        <li>Mensagens de texto simulam digitação humana realista.</li>
+        <li>Notas de voz em áudio simulam status <code>recording</code> (gravando áudio...) antes do upload.</li>
+      </ul>
+
+      <h3>2. Fila Segura Anti-Flood (Rate Limiting)</h3>
+      <p>
+        Mesmo que sua aplicação envie 50 mensagens em um loop <code>for</code>, o CDWA intercepta as requisições na <strong><code>SafeMessageQueue</code></strong>:
+      </p>
+      <ul>
+        <li>Introduz um intervalo variável (ex: entre 1.2s e 3.5s) entre cada disparo.</li>
+        <li>Limita a taxa máxima por minuto (padrão: 25 mensagens/minuto) para evitar bloqueios por rajada.</li>
+      </ul>
+
+      <h3>3. Confirmação de Leitura (Blue Ticks)</h3>
+      <p>
+        Humano abre a conversa, lê a mensagem e responde. O CDWA permite marcar as mensagens como lidas antes de responder:
+      </p>
+      <pre><code>// Marca mensagem como lida (double blue ticks)
+await sock.readMessages([{ remoteJid: jid, id: 'ID_DA_MENSAGEM' }])</code></pre>
+
+      <h3>4. Fingerprint de Navegador Atualizada</h3>
+      <p>
+        O CDWA se conecta simulando as versões mais recentes do Google Chrome (v131+) no Windows 11 e macOS, eliminando rejeições de protocolo por cliente desatualizado.
+      </p>
+
+      <h2>Como Configurar os Recursos de Segurança</h2>
+      <p>Os mecanismos de segurança já vêm ativados por padrão com limites recomendados. Você pode personalizar os parâmetros no <code>makeWASocket</code>:</p>
+
+      <pre><code>import makeWASocket, { useSecureAuthState } from '@cdteam/cdwa'
+
+const auth = await useSecureAuthState('./auth_info', 'senha-mestra')
+
+const sock = makeWASocket({
+  auth,
+  safety: {
+    simulateHumanBehavior: true, // Simula "digitando..." ou "gravando..."
+    rateLimit: true,             // Fila anti-flood sequencial
+    maxMessagesPerMinute: 25,    // Limite máximo seguro por minuto
+    minDelayMs: 1200,            // Atraso mínimo entre mensagens (1.2s)
+    maxDelayMs: 3500,            // Atraso máximo aleatório (3.5s)
+  },
+})</code></pre>
+
+      <h2>Dicas Extras para Operação Segura de Bots</h2>
+      <ul>
+        <li><strong>Aquecimento de Números Novos (Warm-up)</strong>: Chips recém-cadastrados não devem enviar mais que 10 a 15 mensagens por dia na primeira semana. Aumente o volume gradativamente.</li>
+        <li><strong>Evite Spam Não Solicitado</strong>: O maior gatilho de bloqueio são cliques no botão <em>"Bloquear e Denunciar"</em> por parte dos destinatários. Sempre envie mensagens apenas para quem autorizou contato.</li>
+        <li><strong>Variação de Mensagens</strong>: Evite enviar exatamente o mesmo texto repetido para dezenas de pessoas seguidas; alterne saudações (ex: "Olá", "Oi", "Tudo bem?") para criar mensagens únicas.</li>
+      </ul>
+    </main>
+
+    <footer>
+      Documentação gerada para GitHub Pages • Licença MIT
+    </footer>
+  </div>
+</body>
+</html>

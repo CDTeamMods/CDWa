@@ -4,6 +4,7 @@ import { SignalEngine } from '../signal/index.js'
 import { BinaryProtocol } from '../binary/index.js'
 import { MessageBuilder, type AnyMessageContent, type MessageOptions } from '../messages/index.js'
 import { useSecureAuthState } from '../auth/index.js'
+import { SafeMessageQueue, PresenceSimulator, type PresenceType } from '../safety/index.js'
 import type { SocketConfig, AuthenticationState, ConnectionUpdate, BinaryNode } from '../types/index.js'
 
 export interface ClientEvents {
@@ -20,11 +21,25 @@ export class WhatsAppClient extends EventEmitter {
   public auth: AuthenticationState | null = null
   public signal: SignalEngine | null = null
   public readonly config: SocketConfig
+  public readonly safeQueue: SafeMessageQueue
+  public readonly presence: PresenceSimulator
 
   constructor(config: SocketConfig = {}) {
     super()
     this.config = config
     this.socket = new WhatsAppSocket(config)
+
+    // Configuração do motor de segurança e rate limiting
+    this.safeQueue = new SafeMessageQueue({
+      minDelayMs: config.safety?.minDelayMs,
+      maxDelayMs: config.safety?.maxDelayMs,
+      maxMessagesPerMinute: config.safety?.maxMessagesPerMinute,
+    })
+
+    this.presence = new PresenceSimulator({
+      autoTyping: config.safety?.simulateHumanBehavior ?? true,
+      autoRecording: config.safety?.simulateHumanBehavior ?? true,
+    })
 
     if (config.auth) {
       this.setAuthState(config.auth)
@@ -142,15 +157,64 @@ export class WhatsAppClient extends EventEmitter {
   }
 
   /**
-   * Envia qualquer tipo de mensagem (Texto, Imagem, Vídeo, Áudio, Localização, Contato, Reação)
+   * Envia uma atualização de presença (composing, recording, available, unavailable, paused)
+   */
+  async sendPresenceUpdate(jid: string, type: PresenceType): Promise<void> {
+    const node = this.presence.createPresenceNode(jid, type)
+    this.socket.sendNode(node)
+  }
+
+  /**
+   * Marca mensagens como lidas (recibo de leitura / double blue ticks)
+   */
+  async readMessages(keys: Array<{ remoteJid: string; id: string; participant?: string }>): Promise<void> {
+    for (const key of keys) {
+      const node = this.presence.createReadReceiptNode(key.remoteJid, key.id, key.participant)
+      this.socket.sendNode(node)
+    }
+  }
+
+  /**
+   * Envia qualquer tipo de mensagem com recursos de segurança e fila inteligente de rate limiting
    */
   async sendMessage(
     jid: string,
     content: AnyMessageContent | string,
     options: MessageOptions = {}
   ): Promise<{ messageId: string }> {
+    const shouldRateLimit = this.config.safety?.rateLimit ?? true
+
+    if (shouldRateLimit) {
+      return this.safeQueue.enqueue(async () => {
+        return this.internalSendMessage(jid, content, options)
+      })
+    }
+
+    return this.internalSendMessage(jid, content, options)
+  }
+
+  private async internalSendMessage(
+    jid: string,
+    content: AnyMessageContent | string,
+    options: MessageOptions = {}
+  ): Promise<{ messageId: string }> {
     const normalizedContent: AnyMessageContent =
       typeof content === 'string' ? { text: content } : content
+
+    const simulateBehavior = this.config.safety?.simulateHumanBehavior ?? true
+
+    // Simulação de presença antes do envio para evitar detecção anti-spam
+    if (simulateBehavior) {
+      if ('text' in normalizedContent) {
+        const text = normalizedContent.text
+        await this.sendPresenceUpdate(jid, 'composing')
+        const duration = this.presence.calculateTypingDuration(text.length)
+        await this.presence.sleep(duration)
+      } else if ('audio' in normalizedContent) {
+        await this.sendPresenceUpdate(jid, 'recording')
+        await this.presence.sleep(1500)
+      }
+    }
 
     const { node, messageId } = await MessageBuilder.buildMessageNode(
       jid,
@@ -159,6 +223,12 @@ export class WhatsAppClient extends EventEmitter {
     )
 
     this.socket.sendNode(node)
+
+    // Finaliza estado de presença
+    if (simulateBehavior && ('text' in normalizedContent || 'audio' in normalizedContent)) {
+      await this.sendPresenceUpdate(jid, 'paused')
+    }
+
     return { messageId }
   }
 

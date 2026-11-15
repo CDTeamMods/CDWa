@@ -23,6 +23,7 @@
     <ul class="nav-list">
       <li class="nav-item"><a href="architecture.html" class="nav-link">Arquitetura & Segurança</a></li>
       <li class="nav-item"><a href="authentication.html" class="nav-link">Autenticação & Estado</a></li>
+      <li class="nav-item"><a href="safety.html" class="nav-link">Segurança 🛡️</a></li>
     </ul>
 
     <div class="nav-title">Desenvolvimento</div>
@@ -35,6 +36,7 @@
   <div class="main-wrapper">
     <header class="header">
       <a href="index.html">← Voltar para Início</a>
+      <a href="https://github.com/CDTeamMods/CDWa" target="_blank" rel="noopener">GitHub ↗</a>
     </header>
 
     <main class="content">
@@ -42,7 +44,7 @@
       <p>Aprenda a instalar o CDWA e conectar seu primeiro bot ao WhatsApp em menos de 2 minutos.</p>
 
       <h2>1. Instalação</h2>
-      <pre><code>npm install cdwa</code></pre>
+      <pre><code>npm install @cdteam/cdwa</code></pre>
 
       <p>Para projetos TypeScript, garanta que possui as definições de tipo:</p>
       <pre><code>npm install -D @types/node typescript</code></pre>
@@ -51,7 +53,7 @@
       <p>Você pode usar o CDWA diretamente em projetos JavaScript sem precisar de compiladores ou TypeScript:</p>
 
       <h3>Com ES Modules (import - .js)</h3>
-      <pre><code>import makeWASocket, { useSecureAuthState } from 'cdwa'
+      <pre><code>import makeWASocket, { useSecureAuthState } from '@cdteam/cdwa'
 
 async function start() {
   const auth = await useSecureAuthState('./auth_info', 'senha-secreta')
@@ -68,7 +70,7 @@ async function start() {
 start()</code></pre>
 
       <h3>Com CommonJS (require - .cjs)</h3>
-      <pre><code>const { default: makeWASocket, useSecureAuthState } = require('cdwa')
+      <pre><code>const { default: makeWASocket, useSecureAuthState } = require('@cdteam/cdwa')
 
 async function start() {
   const auth = await useSecureAuthState('./auth_info', 'senha-secreta')

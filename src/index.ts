@@ -8,6 +8,7 @@ export * from './auth/index.js'
 export * from './signal/index.js'
 export * from './binary/index.js'
 export * from './messages/index.js'
+export * from './safety/index.js'
 export * from './socket/index.js'
 export * from './client/index.js'
 
