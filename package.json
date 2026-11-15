@@ -1,5 +1,5 @@
 {
-  "name": "cdwa",
+  "name": "@cdteam/cdwa",
   "version": "0.1.0",
   "description": "Modern, highly secure and modular WhatsApp Web Multi-Device protocol engine for Node.js and TypeScript",
   "type": "module",
@@ -65,7 +65,7 @@
     "bot",
     "chat"
   ],
-  "author": "CDTeamMods",
+  "author": "CDTeam",
   "license": "MIT",
   "dependencies": {
     "@noble/ciphers": "^1.1.0",

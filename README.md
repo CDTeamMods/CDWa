@@ -1,4 +1,4 @@
-# CDWA (Clean Decentralized WhatsApp Architecture) 🚀
+# CDWA 🚀
 
 > Uma biblioteca moderna, modular e com foco em alta segurança e criptografia para o protocolo WhatsApp Web Multi-Device, desenhada para o ecossistema Node.js e TypeScript.
 

@@ -13,7 +13,7 @@ export interface ClientEvents {
 }
 
 /**
- * Cliente principal da biblioteca CDWA (Clean Decentralized WhatsApp Architecture)
+ * Cliente principal da biblioteca CDWA
  */
 export class WhatsAppClient extends EventEmitter {
   public socket: WhatsAppSocket
