@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Início Rápido - CDWA</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <a href="index.html" class="brand">
+      <span>🚀 CDWA</span>
+      <span class="brand-badge">v0.1.0</span>
+    </a>
+
+    <div class="nav-title">Primeiros Passos</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="index.html" class="nav-link">Visão Geral</a></li>
+      <li class="nav-item"><a href="getting-started.html" class="nav-link active">Início Rápido</a></li>
+    </ul>
+
+    <div class="nav-title">Conceitos Centrais</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="architecture.html" class="nav-link">Arquitetura & Segurança</a></li>
+      <li class="nav-item"><a href="authentication.html" class="nav-link">Autenticação & Estado</a></li>
+    </ul>
+
+    <div class="nav-title">Desenvolvimento</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="sending-messages.html" class="nav-link">Envio de Mensagens</a></li>
+      <li class="nav-item"><a href="events.html" class="nav-link">Eventos & Conexão</a></li>
+    </ul>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="header">
+      <a href="index.html">← Voltar para Início</a>
+    </header>
+
+    <main class="content">
+      <h1>Início Rápido (Getting Started) 🚀</h1>
+      <p>Aprenda a instalar o CDWA e conectar seu primeiro bot ao WhatsApp em menos de 2 minutos.</p>
+
+      <h2>1. Instalação</h2>
+      <pre><code>npm install cdwa</code></pre>
+
+      <p>Para projetos TypeScript, garanta que possui as definições de tipo:</p>
+      <pre><code>npm install -D @types/node typescript</code></pre>
+
+      <h2>2. Código do Primeiro Bot</h2>
+      <p>Crie um arquivo chamado <code>bot.ts</code>:</p>
+      <pre><code>import makeWASocket, { useSecureAuthState } from 'cdwa'
+
+async function startBot() {
+  // 1. Armazenamento seguro de sessão protegido por senha mestra
+  const auth = await useSecureAuthState('./auth_info', 'minha-senha-secreta-forte')
+
+  // 2. Instancia o cliente com exibição de QR Code
+  const sock = makeWASocket({
+    auth,
+    printQRInTerminal: true,
+  })
+
+  // 3. Monitora status de conexão
+  sock.on('connection.update', (update) => {
+    const { connection, qr } = update
+
+    if (qr) {
+      console.log('📌 Escaneie o QR Code no seu WhatsApp:', qr)
+    }
+
+    if (connection === 'open') {
+      console.log('✅ Bot conectado com sucesso!')
+    }
+  })
+
+  // 4. Conecta ao WebSocket do WhatsApp
+  await sock.connect()
+}
+
+startBot().catch(console.error)</code></pre>
+
+      <h2>3. Executando o Projeto</h2>
+      <pre><code>npx tsx bot.ts</code></pre>
+      <p>Abra seu WhatsApp no smartphone, acesse <strong>Aparelhos Conectados</strong> e aponte a câmera para o QR Code gerado!</p>
+    </main>
+
+    <footer>
+      Documentação gerada para GitHub Pages • Licença MIT
+    </footer>
+  </div>
+</body>
+</html>

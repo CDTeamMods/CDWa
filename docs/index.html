@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CDWA - Documentação Oficial</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <a href="index.html" class="brand">
+      <span>🚀 CDWA</span>
+      <span class="brand-badge">v0.1.0</span>
+    </a>
+
+    <div class="nav-title">Primeiros Passos</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="index.html" class="nav-link active">Visão Geral</a></li>
+      <li class="nav-item"><a href="getting-started.html" class="nav-link">Início Rápido</a></li>
+    </ul>
+
+    <div class="nav-title">Conceitos Centrais</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="architecture.html" class="nav-link">Arquitetura & Segurança</a></li>
+      <li class="nav-item"><a href="authentication.html" class="nav-link">Autenticação & Estado</a></li>
+    </ul>
+
+    <div class="nav-title">Desenvolvimento</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="sending-messages.html" class="nav-link">Envio de Mensagens</a></li>
+      <li class="nav-item"><a href="events.html" class="nav-link">Eventos & Conexão</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Wrapper -->
+  <div class="main-wrapper">
+    <header class="header">
+      <a href="https://github.com/WhiskeySockets/Baileys" target="_blank" rel="noopener">Inspirado no Baileys</a>
+      <a href="https://github.com" target="_blank" rel="noopener">GitHub ↗</a>
+    </header>
+
+    <main class="content">
+      <h1>Documentação Oficial do CDWA 🚀</h1>
+      <p>
+        O <strong>CDWA (Clean Decentralized WhatsApp Architecture)</strong> é uma biblioteca moderna, de alta performance e com foco absoluto em <strong>segurança criptográfica</strong> para o protocolo WhatsApp Web Multi-Device, desenhada para Node.js e TypeScript.
+      </p>
+
+      <div class="callout success">
+        <div class="callout-title">Por que o CDWA?</div>
+        Reconstruído desde a base para resolver os problemas históricos do Baileys: credenciais em texto plano no disco, vazamentos de memória e tipagem frágil.
+      </div>
+
+      <h2>Diferenciais em Relação ao Baileys Tradicional</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Recurso</th>
+            <th>Baileys Clássico</th>
+            <th>CDWA</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Armazenamento de Sessão</strong></td>
+            <td>JSONs desprotegidos em texto plano</td>
+            <td><strong>Criptografia At-Rest com AES-256-GCM</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Primitivas Criptográficas</strong></td>
+            <td>Bibliotecas legadas heterogêneas</td>
+            <td><strong>@noble/curves (RFC 7748) auditado</strong></td>
+          </tr>
+          <tr>
+            <td><strong>TypeScript</strong></td>
+            <td>Histórico com muitos tipos <code>any</code></td>
+            <td><strong>Modo Estrito (Strict Mode) 100%</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Compatibilidade</strong></td>
+            <td>CommonJS predominante</td>
+            <td><strong>Dual Export (ESM nativo + CJS)</strong></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Navegação Rápida</h2>
+      <ul>
+        <li><a href="getting-started.html"><strong>Início Rápido</strong></a>: Instalação e seu primeiro bot conectado em 2 minutos.</li>
+        <li><a href="architecture.html"><strong>Arquitetura & Segurança</strong></a>: Detalhes do Noise Protocol Handshake e criptografia ponta a ponta.</li>
+        <li><a href="sending-messages.html"><strong>Envio de Mensagens</strong></a>: Como enviar textos, fotos, vídeos, notas de voz, GPS e contatos.</li>
+        <li><a href="events.html"><strong>Manipulação de Eventos</strong></a>: Tratamento de status de conexão e novas mensagens.</li>
+      </ul>
+    </main>
+
+    <footer>
+      Documentação gerada para GitHub Pages • Licença MIT
+    </footer>
+  </div>
+</body>
+</html>

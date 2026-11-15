@@ -66,18 +66,18 @@
   "author": "CDTeamMods",
   "license": "MIT",
   "dependencies": {
-    "@noble/ciphers": "^1.1.0",
-    "@noble/curves": "^1.7.0",
-    "@noble/hashes": "^1.6.0",
-    "protobufjs": "^7.4.0",
+    "@noble/ciphers": "^2.4.0",
+    "@noble/curves": "^2.4.0",
+    "@noble/hashes": "^2.4.0",
+    "protobufjs": "^8.8.1",
     "ws": "^8.18.0"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
+    "@types/node": "^26.6.6",
     "@types/ws": "^8.5.13",
-    "tsup": "^8.3.5",
+    "tsup": "^9.0.0",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2",
+    "typescript": "^7.0.2",
     "vitest": "^5.1.0"
   },
   "engines": {

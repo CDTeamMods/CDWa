@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Envio de Mensagens - CDWA</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <a href="index.html" class="brand">
+      <span>🚀 CDWA</span>
+      <span class="brand-badge">v0.1.0</span>
+    </a>
+
+    <div class="nav-title">Primeiros Passos</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="index.html" class="nav-link">Visão Geral</a></li>
+      <li class="nav-item"><a href="getting-started.html" class="nav-link">Início Rápido</a></li>
+    </ul>
+
+    <div class="nav-title">Conceitos Centrais</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="architecture.html" class="nav-link">Arquitetura & Segurança</a></li>
+      <li class="nav-item"><a href="authentication.html" class="nav-link">Autenticação & Estado</a></li>
+    </ul>
+
+    <div class="nav-title">Desenvolvimento</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="sending-messages.html" class="nav-link active">Envio de Mensagens</a></li>
+      <li class="nav-item"><a href="events.html" class="nav-link">Eventos & Conexão</a></li>
+    </ul>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="header">
+      <a href="index.html">← Voltar para Início</a>
+    </header>
+
+    <main class="content">
+      <h1>Guia Completo de Envio de Mensagens 📩</h1>
+      <p>O método <code>sock.sendMessage(jid, content, options)</code> permite enviar todos os formatos suportados pelo WhatsApp.</p>
+
+      <h2>1. Mensagem de Texto</h2>
+      <pre><code>await sock.sendMessage(jid, { text: 'Olá mundo!' })</code></pre>
+
+      <h2>2. Mensagem de Imagem (Buffer ou URL)</h2>
+      <pre><code>await sock.sendMessage(jid, {
+  image: { url: 'https://exemplo.com/foto.jpg' },
+  caption: 'Legenda da foto!',
+})</code></pre>
+
+      <h2>3. Mensagem de Vídeo / GIF</h2>
+      <pre><code>await sock.sendMessage(jid, {
+  video: { url: 'https://exemplo.com/video.mp4' },
+  caption: 'Confira este vídeo!',
+  gifPlayback: false,
+})</code></pre>
+
+      <h2>4. Áudio e Notas de Voz (PTT)</h2>
+      <pre><code>await sock.sendMessage(jid, {
+  audio: { url: 'https://exemplo.com/audio.mp3' },
+  ptt: true, // Envia como áudio gravado no microfone (azul)
+})</code></pre>
+
+      <h2>5. Documentos</h2>
+      <pre><code>await sock.sendMessage(jid, {
+  document: { url: 'https://exemplo.com/arquivo.pdf' },
+  mimetype: 'application/pdf',
+  fileName: 'documento.pdf',
+})</code></pre>
+
+      <h2>6. Localização GPS</h2>
+      <pre><code>await sock.sendMessage(jid, {
+  location: {
+    degreesLatitude: -23.55052,
+    degreesLongitude: -46.633308,
+    name: 'Praça da Sé',
+    address: 'São Paulo - SP',
+  },
+})</code></pre>
+
+      <h2>7. Reações com Emojis</h2>
+      <pre><code>await sock.sendMessage(jid, {
+  react: {
+    text: '🚀',
+    key: { remoteJid: jid, id: 'ID_DA_MENSAGEM' },
+  },
+})</code></pre>
+    </main>
+
+    <footer>
+      Documentação gerada para GitHub Pages • Licença MIT
+    </footer>
+  </div>
+</body>
+</html>

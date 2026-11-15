@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arquitetura & Segurança - CDWA</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <a href="index.html" class="brand">
+      <span>🚀 CDWA</span>
+      <span class="brand-badge">v0.1.0</span>
+    </a>
+
+    <div class="nav-title">Primeiros Passos</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="index.html" class="nav-link">Visão Geral</a></li>
+      <li class="nav-item"><a href="getting-started.html" class="nav-link">Início Rápido</a></li>
+    </ul>
+
+    <div class="nav-title">Conceitos Centrais</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="architecture.html" class="nav-link active">Arquitetura & Segurança</a></li>
+      <li class="nav-item"><a href="authentication.html" class="nav-link">Autenticação & Estado</a></li>
+    </ul>
+
+    <div class="nav-title">Desenvolvimento</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="sending-messages.html" class="nav-link">Envio de Mensagens</a></li>
+      <li class="nav-item"><a href="events.html" class="nav-link">Eventos & Conexão</a></li>
+    </ul>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="header">
+      <a href="index.html">← Voltar para Início</a>
+    </header>
+
+    <main class="content">
+      <h1>Arquitetura & Segurança Criptográfica 🔒</h1>
+      <p>Entenda como o CDWA implementa as camadas de transporte e proteção ponta a ponta do WhatsApp.</p>
+
+      <h2>1. Camada de Transporte: Noise Protocol</h2>
+      <p>
+        O CDWA se conecta via WebSocket seguro e realiza imediatamente o handshake <strong>Noise_XX_25519_AESGCM_SHA256</strong>:
+      </p>
+      <ul>
+        <li><strong>Prólogo Oficial</strong>: <code>WA\x06\x02</code> prefixado no pacote de saudação.</li>
+        <li><strong>Chaves Efêmeras</strong>: Geração de par de chaves Curve25519 para garantir que sessões passadas não possam ser descriptografadas (Perfect Forward Secrecy).</li>
+        <li><strong>Cifras Simétricas</strong>: Divisão em <code>writeCipher</code> e <code>readCipher</code> com Nonce sequencial de 64-bit para evitar ataques de repetição.</li>
+      </ul>
+
+      <h2>2. Formato Binário WABinary</h2>
+      <p>
+        O WhatsApp compacta stanzas XML em bytes binários. O motor <code>BinaryProtocol</code> converte nós estruturados:
+      </p>
+      <pre><code>// Estrutura de Stanza no CDWA
+const node = BinaryProtocol.createNode('iq', {
+  to: 's.whatsapp.net',
+  type: 'set',
+  xmlns: 'pair-device',
+})</code></pre>
+
+      <h2>3. Blindagem de Credenciais (Criptografia At-Rest)</h2>
+      <div class="callout warning">
+        <div class="callout-title">O Risco do Baileys Tradicional</div>
+        No Baileys, salvar credenciais com <code>useMultiFileAuthState</code> gera arquivos JSON com chaves privadas em texto puro. Se seu servidor for violado, suas sessões são expostas.
+      </div>
+      <p>
+        O CDWA resolve isso na raiz: todas as credenciais gravadas no disco passam por derivação de chave via <strong>HKDF-SHA256</strong> e são cifradas com <strong>AES-256-GCM</strong> usando sua senha mestra.
+      </p>
+    </main>
+
+    <footer>
+      Documentação gerada para GitHub Pages • Licença MIT
+    </footer>
+  </div>
+</body>
+</html>

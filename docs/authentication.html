@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autenticação & Estado - CDWA</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <a href="index.html" class="brand">
+      <span>🚀 CDWA</span>
+      <span class="brand-badge">v0.1.0</span>
+    </a>
+
+    <div class="nav-title">Primeiros Passos</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="index.html" class="nav-link">Visão Geral</a></li>
+      <li class="nav-item"><a href="getting-started.html" class="nav-link">Início Rápido</a></li>
+    </ul>
+
+    <div class="nav-title">Conceitos Centrais</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="architecture.html" class="nav-link">Arquitetura & Segurança</a></li>
+      <li class="nav-item"><a href="authentication.html" class="nav-link active">Autenticação & Estado</a></li>
+    </ul>
+
+    <div class="nav-title">Desenvolvimento</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="sending-messages.html" class="nav-link">Envio de Mensagens</a></li>
+      <li class="nav-item"><a href="events.html" class="nav-link">Eventos & Conexão</a></li>
+    </ul>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="header">
+      <a href="index.html">← Voltar para Início</a>
+    </header>
+
+    <main class="content">
+      <h1>Autenticação & Gerenciamento de Estado 🔑</h1>
+      <p>Gerencie as chaves do Signal e credenciais de sessão do WhatsApp sem expor dados confidenciais.</p>
+
+      <h2>1. useSecureAuthState</h2>
+      <p>
+        Proteja todos os arquivos de sessão gerados pelo WhatsApp com <strong>AES-256-GCM</strong>:
+      </p>
+      <pre><code>import { useSecureAuthState } from 'cdwa'
+
+// Senha mestra via variável de ambiente
+const secret = process.env.SESSION_SECRET || 'senha-mestra-longa'
+
+const auth = await useSecureAuthState('./auth_info', secret)
+
+const sock = makeWASocket({ auth })</code></pre>
+
+      <div class="callout success">
+        <div class="callout-title">Dica de Produção</div>
+        Nunca adicione a pasta <code>./auth_info</code> ao Git. Adicione-a ao seu <code>.gitignore</code> para evitar o vazamento acidental de chaves.
+      </div>
+
+      <h2>2. Armazenamento Remoto (Redis, PostgreSQL, MongoDB)</h2>
+      <p>
+        Para hospedar seu bot em servidores que não possuem persistência de disco (ex: Heroku, Render, AWS Lambda, Kubernetes), você pode implementar sua própria interface <code>SignalKeyStore</code> e carregar as credenciais a partir de qualquer banco de dados.
+      </p>
+    </main>
+
+    <footer>
+      Documentação gerada para GitHub Pages • Licença MIT
+    </footer>
+  </div>
+</body>
+</html>
