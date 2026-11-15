@@ -1,0 +1,92 @@
+{
+  "name": "cdwa",
+  "version": "0.1.0",
+  "description": "Modern, highly secure and modular WhatsApp Web Multi-Device protocol engine for Node.js and TypeScript",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./crypto": {
+      "types": "./dist/crypto/index.d.ts",
+      "import": "./dist/crypto/index.js",
+      "require": "./dist/crypto/index.cjs"
+    },
+    "./auth": {
+      "types": "./dist/auth/index.d.ts",
+      "import": "./dist/auth/index.js",
+      "require": "./dist/auth/index.cjs"
+    },
+    "./signal": {
+      "types": "./dist/signal/index.d.ts",
+      "import": "./dist/signal/index.js",
+      "require": "./dist/signal/index.cjs"
+    },
+    "./binary": {
+      "types": "./dist/binary/index.d.ts",
+      "import": "./dist/binary/index.js",
+      "require": "./dist/binary/index.cjs"
+    },
+    "./messages": {
+      "types": "./dist/messages/index.d.ts",
+      "import": "./dist/messages/index.js",
+      "require": "./dist/messages/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "proto",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit",
+    "example": "tsx examples/example.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "whatsapp",
+    "whatsapp-web",
+    "baileys",
+    "multi-device",
+    "signal-protocol",
+    "noise-protocol",
+    "bot",
+    "chat"
+  ],
+  "author": "CDTeamMods",
+  "license": "MIT",
+  "dependencies": {
+    "@noble/ciphers": "^1.1.0",
+    "@noble/curves": "^1.7.0",
+    "@noble/hashes": "^1.6.0",
+    "protobufjs": "^7.4.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.5.13",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^5.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "allowScripts": {
+    "protobufjs@7.6.6": true,
+    "esbuild@0.28.2": true,
+    "esbuild@0.27.7": true,
+    "esbuild@0.21.5": true
+  }
+}

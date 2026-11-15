@@ -1,0 +1,12 @@
+src/
+tests/
+proto/
+.github/
+.vscode/
+tsup.config.ts
+tsconfig.json
+vitest.config.ts
+.gitignore
+.npmignore
+creds/
+auth_info/
