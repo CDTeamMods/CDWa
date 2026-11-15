@@ -46,59 +46,40 @@ npm install cdwa
 
 ---
 
-## 🚀 Exemplo Rápido
+## 🚀 Uso Rápido (JavaScript Puro ou TypeScript)
 
-```typescript
+### Em JavaScript Puro com ES Modules (`import` - arquivo `.js`):
+```javascript
 import makeWASocket, { useSecureAuthState } from 'cdwa'
 
-async function main() {
-  // 1. Armazenamento seguro de sessão criptografado com senha mestra
-  const auth = await useSecureAuthState('./auth_info', 'minha-chave-secreta-ultra-forte')
+const auth = await useSecureAuthState('./auth_info', 'senha-secreta')
+const sock = makeWASocket({ auth, printQRInTerminal: true })
 
-  // 2. Inicializa o cliente com exibição de QR Code no terminal
-  const sock = makeWASocket({
-    auth,
-    printQRInTerminal: true,
+sock.on('connection.update', ({ qr, connection }) => {
+  if (qr) console.log('Escaneie o QR Code:', qr)
+  if (connection === 'open') console.log('✅ Conectado via JavaScript Puro!')
+})
+
+await sock.connect()
+```
+
+### Em JavaScript Puro com CommonJS (`require` - arquivo `.cjs`):
+```javascript
+const { default: makeWASocket, useSecureAuthState } = require('cdwa')
+
+async function run() {
+  const auth = await useSecureAuthState('./auth_info', 'senha-secreta')
+  const sock = makeWASocket({ auth, printQRInTerminal: true })
+
+  sock.on('connection.update', ({ qr, connection }) => {
+    if (qr) console.log('Escaneie o QR Code:', qr)
+    if (connection === 'open') console.log('✅ Conectado via CommonJS!')
   })
 
-  // 3. Monitora status da conexão
-  sock.on('connection.update', (update) => {
-    const { connection, qr } = update
-
-    if (qr) {
-      console.log('📌 Escaneie o QR Code no seu WhatsApp:', qr)
-    }
-
-    if (connection === 'open') {
-      console.log('✅ Bot conectado com sucesso ao WhatsApp!')
-      enviarMensagens(sock)
-    }
-  })
-
-  // 4. Conecta ao WebSocket do WhatsApp
   await sock.connect()
 }
 
-async function enviarMensagens(sock: ReturnType<typeof makeWASocket>) {
-  const jid = '5511999999999@s.whatsapp.net'
-
-  // Texto simples
-  await sock.sendMessage(jid, { text: 'Olá do CDWA! 🚀' })
-
-  // Imagem com legenda
-  await sock.sendMessage(jid, {
-    image: { url: 'https://placehold.co/600x400/png' },
-    caption: 'Foto demonstrativa!',
-  })
-
-  // Áudio / Nota de voz gravada no microfone (PTT)
-  await sock.sendMessage(jid, {
-    audio: { url: 'https://exemplo.com/audio.mp3' },
-    ptt: true,
-  })
-}
-
-main().catch(console.error)
+run()
 ```
 
 ---

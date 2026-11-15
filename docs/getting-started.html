@@ -47,41 +47,45 @@
       <p>Para projetos TypeScript, garanta que possui as definições de tipo:</p>
       <pre><code>npm install -D @types/node typescript</code></pre>
 
-      <h2>2. Código do Primeiro Bot</h2>
-      <p>Crie um arquivo chamado <code>bot.ts</code>:</p>
+      <h2>2. Usando em JavaScript Puro (.js)</h2>
+      <p>Você pode usar o CDWA diretamente em projetos JavaScript sem precisar de compiladores ou TypeScript:</p>
+
+      <h3>Com ES Modules (import - .js)</h3>
       <pre><code>import makeWASocket, { useSecureAuthState } from 'cdwa'
 
-async function startBot() {
-  // 1. Armazenamento seguro de sessão protegido por senha mestra
-  const auth = await useSecureAuthState('./auth_info', 'minha-senha-secreta-forte')
+async function start() {
+  const auth = await useSecureAuthState('./auth_info', 'senha-secreta')
+  const sock = makeWASocket({ auth, printQRInTerminal: true })
 
-  // 2. Instancia o cliente com exibição de QR Code
-  const sock = makeWASocket({
-    auth,
-    printQRInTerminal: true,
-  })
-
-  // 3. Monitora status de conexão
   sock.on('connection.update', (update) => {
-    const { connection, qr } = update
-
-    if (qr) {
-      console.log('📌 Escaneie o QR Code no seu WhatsApp:', qr)
-    }
-
-    if (connection === 'open') {
-      console.log('✅ Bot conectado com sucesso!')
-    }
+    if (update.qr) console.log('QR Code:', update.qr)
+    if (update.connection === 'open') console.log('✅ Conectado via JS puro!')
   })
 
-  // 4. Conecta ao WebSocket do WhatsApp
   await sock.connect()
 }
 
-startBot().catch(console.error)</code></pre>
+start()</code></pre>
 
-      <h2>3. Executando o Projeto</h2>
-      <pre><code>npx tsx bot.ts</code></pre>
+      <h3>Com CommonJS (require - .cjs)</h3>
+      <pre><code>const { default: makeWASocket, useSecureAuthState } = require('cdwa')
+
+async function start() {
+  const auth = await useSecureAuthState('./auth_info', 'senha-secreta')
+  const sock = makeWASocket({ auth, printQRInTerminal: true })
+
+  sock.on('connection.update', (update) => {
+    if (update.qr) console.log('QR Code:', update.qr)
+    if (update.connection === 'open') console.log('✅ Conectado via CommonJS!')
+  })
+
+  await sock.connect()
+}
+
+start()</code></pre>
+
+      <h2>3. Executando com Node.js Puro</h2>
+      <pre><code>node bot.js</code></pre>
       <p>Abra seu WhatsApp no smartphone, acesse <strong>Aparelhos Conectados</strong> e aponte a câmera para o QR Code gerado!</p>
     </main>
 

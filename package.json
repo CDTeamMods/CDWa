@@ -51,6 +51,8 @@
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
     "example": "tsx examples/example.ts",
+    "example:js": "node examples/example.js",
+    "example:cjs": "node examples/example.cjs",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
@@ -86,7 +88,6 @@
   "allowScripts": {
     "protobufjs@7.6.6": true,
     "esbuild@0.28.2": true,
-    "esbuild@0.27.7": true,
-    "esbuild@0.21.5": true
+    "esbuild@0.27.2": true
   }
 }
