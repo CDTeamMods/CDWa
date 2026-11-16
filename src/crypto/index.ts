@@ -6,12 +6,20 @@ import { randomBytes } from 'crypto'
 import type { KeyPair } from '../types/index.js'
 
 /**
- * Utilitários criptográficos de alta performance e segurança para o protocolo WhatsApp
+ * Utilitários criptográficos de alta performance e segurança para o protocolo WhatsApp.
+ *
+ * Provê operações com curvas elípticas Curve25519 (X25519), derivação de chaves HKDF (RFC 5869),
+ * cifras autenticadas AES-256-GCM e encriptação segura at-rest para credenciais.
  */
-
 export class CryptoEngine {
   /**
-   * Gera um novo par de chaves Curve25519 (Diffie-Hellman)
+   * Gera um novo par de chaves Curve25519 (Diffie-Hellman).
+   *
+   * @returns Par de chaves contendo `private` (32 bytes) e `public` (32 bytes).
+   * @example
+   * ```ts
+   * const pair = CryptoEngine.generateKeyPair()
+   * ```
    */
   static generateKeyPair(): KeyPair {
     const priv = randomBytes(32)
@@ -23,14 +31,32 @@ export class CryptoEngine {
   }
 
   /**
-   * Executa Diffie-Hellman compartilhado (Shared Secret) usando Curve25519
+   * Executa Diffie-Hellman compartilhado (Shared Secret) usando Curve25519 (X25519).
+   *
+   * @param privateKey - Chave privada Curve25519 (32 bytes).
+   * @param publicKey - Chave pública Curve25519 remota (32 bytes).
+   * @returns Segredo compartilhado calculado (32 bytes).
+   * @example
+   * ```ts
+   * const sharedSecret = CryptoEngine.sharedKey(myPriv, peerPub)
+   * ```
    */
   static sharedKey(privateKey: Uint8Array, publicKey: Uint8Array): Uint8Array {
     return x25519.getSharedSecret(privateKey, publicKey)
   }
 
   /**
-   * HKDF baseado em SHA-256 para derivação segura de chaves (RFC 5869)
+   * Deriva chaves criptográficas utilizando HKDF baseado em SHA-256 (RFC 5869).
+   *
+   * @param secret - Material de chave de entrada (IKM).
+   * @param info - Informação de contexto / etiqueta de domínio.
+   * @param salt - Sal opcional para a etapa de extração.
+   * @param length - Tamanho em bytes da chave derivada (padrão: 32).
+   * @returns Chave derivada de tamanho especificado.
+   * @example
+   * ```ts
+   * const derived = CryptoEngine.deriveKey(sharedKey, 'WhatsApp Info', salt, 64)
+   * ```
    */
   static deriveKey(
     secret: Uint8Array,
@@ -43,7 +69,17 @@ export class CryptoEngine {
   }
 
   /**
-   * Encriptação autenticada com AES-256-GCM
+   * Criptografa dados em texto plano utilizando AES-256-GCM (cifra autenticada com tag).
+   *
+   * @param key - Chave de criptografia de 256 bits (32 bytes).
+   * @param plaintext - Dados a serem criptografados.
+   * @param iv - Vetor de inicialização (IV / Nonce de 12 bytes).
+   * @param additionalData - Dados autenticados adicionais (AD) opcionais.
+   * @returns Texto cifrado concatenado com a authentication tag (16 bytes).
+   * @example
+   * ```ts
+   * const ciphertext = CryptoEngine.aesGcmEncrypt(key, plaintext, iv)
+   * ```
    */
   static aesGcmEncrypt(
     key: Uint8Array,
@@ -56,7 +92,18 @@ export class CryptoEngine {
   }
 
   /**
-   * Decriptação autenticada com AES-256-GCM
+   * Descriptografa e verifica a autenticidade de dados utilizando AES-256-GCM.
+   *
+   * @param key - Chave de 256 bits (32 bytes).
+   * @param ciphertext - Texto cifrado com a authentication tag anexada.
+   * @param iv - Vetor de inicialização (12 bytes).
+   * @param additionalData - Dados autenticados adicionais (AD) que devem bater com a encriptação.
+   * @returns Dados originais decodificados em texto plano.
+   * @throws {Error} Se a tag de autenticação for inválida ou os dados tiverem sido corrompidos.
+   * @example
+   * ```ts
+   * const plaintext = CryptoEngine.aesGcmDecrypt(key, ciphertext, iv)
+   * ```
    */
   static aesGcmDecrypt(
     key: Uint8Array,
@@ -69,7 +116,15 @@ export class CryptoEngine {
   }
 
   /**
-   * Encripta um payload com uma senha mestra (para proteger credenciais at-rest)
+   * Encripta um payload com uma senha mestra para proteger credenciais em repouso no disco (at-rest).
+   *
+   * @param payload - Dados a serem protegidos.
+   * @param masterPassphrase - Senha definida pelo usuário para derivar a chave mestre.
+   * @returns Pacote contendo `iv` (hex), `salt` (hex) e `data` (base64).
+   * @example
+   * ```ts
+   * const bundle = CryptoEngine.encryptAtRest(buffer, 'senha-mestre')
+   * ```
    */
   static encryptAtRest(payload: Uint8Array, masterPassphrase: string): { iv: string; salt: string; data: string } {
     const salt = randomBytes(16)
@@ -85,7 +140,16 @@ export class CryptoEngine {
   }
 
   /**
-   * Decripta um payload protegido com a senha mestra
+   * Descriptografa um pacote protegido em repouso utilizando a senha mestra.
+   *
+   * @param encryptedBundle - Objeto com `iv`, `salt` e `data`.
+   * @param masterPassphrase - Mesma senha informada no momento da encriptação.
+   * @returns Dados originais em `Uint8Array`.
+   * @throws {Error} Caso a senha esteja incorreta ou o conteúdo tenha sido violado.
+   * @example
+   * ```ts
+   * const originalBytes = CryptoEngine.decryptAtRest(bundle, 'senha-mestre')
+   * ```
    */
   static decryptAtRest(
     encryptedBundle: { iv: string; salt: string; data: string },
@@ -101,4 +165,3 @@ export class CryptoEngine {
 }
 
 export * from './noise.js'
-

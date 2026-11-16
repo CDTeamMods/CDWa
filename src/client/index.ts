@@ -14,7 +14,25 @@ export interface ClientEvents {
 }
 
 /**
- * Cliente principal da biblioteca CDWA
+ * Cliente principal da biblioteca CDWA (Next-generation WhatsApp Web Multi-Device Protocol Engine).
+ *
+ * Gerencia a conexão WebSocket com os servidores do WhatsApp, autenticação Noise Handshake,
+ * criptografia ponta-a-ponta (Signal Protocol), simulação de comportamento humano e fila inteligente de mensagens.
+ *
+ * @example
+ * ```ts
+ * import makeWASocket, { useSecureAuthState } from 'cdwa'
+ *
+ * const auth = await useSecureAuthState('./auth_info')
+ * const sock = makeWASocket({ auth })
+ *
+ * sock.on('connection.update', ({ connection, qr }) => {
+ *   if (qr) console.log('QR Code:', qr)
+ *   if (connection === 'open') console.log('Conectado com sucesso!')
+ * })
+ *
+ * await sock.connect()
+ * ```
  */
 export class WhatsAppClient extends EventEmitter {
   public socket: WhatsAppSocket
@@ -24,6 +42,11 @@ export class WhatsAppClient extends EventEmitter {
   public readonly safeQueue: SafeMessageQueue
   public readonly presence: PresenceSimulator
 
+  /**
+   * Inicializa uma nova instância do cliente WhatsApp.
+   *
+   * @param config - Configurações opcionais de conexão, autenticação e parâmetros de segurança/rate limiting.
+   */
   constructor(config: SocketConfig = {}) {
     super()
     this.config = config
@@ -48,12 +71,22 @@ export class WhatsAppClient extends EventEmitter {
     this.setupListeners()
   }
 
-  public setAuthState(auth: AuthenticationState) {
+  /**
+   * Configura ou atualiza o estado de autenticação e inicializa o motor criptográfico Signal.
+   *
+   * @param auth - Estrutura de autenticação contendo credenciais e armazenamento de chaves (SignalKeyStore).
+   */
+  public setAuthState(auth: AuthenticationState): void {
     this.auth = auth
     this.signal = new SignalEngine(auth.keys)
   }
 
-  private setupListeners() {
+  /**
+   * Configura os ouvintes de eventos internos do WebSocket e propaga para a instância do cliente.
+   *
+   * @internal
+   */
+  private setupListeners(): void {
     this.socket.on('connection.update', (update: ConnectionUpdate) => {
       this.emit('connection.update', update)
     })
@@ -72,9 +105,12 @@ export class WhatsAppClient extends EventEmitter {
   }
 
   /**
-   * Disparado após a conexão criptografada (Noise) estar pronta
+   * Disparado após a conclusão bem-sucedida do handshake criptografado Noise.
+   * Determina se é necessário solicitar pareamento via QR Code ou abrir a conexão.
+   *
+   * @internal
    */
-  private async onHandshakeComplete() {
+  private async onHandshakeComplete(): Promise<void> {
     if (!this.auth) {
       return
     }
@@ -89,9 +125,11 @@ export class WhatsAppClient extends EventEmitter {
   }
 
   /**
-   * Envia stanza solicitando o QR Code de pareamento
+   * Envia uma stanza IQ solicitando referência para geração do QR Code de pareamento.
+   *
+   * @internal
    */
-  private async requestPairingCode() {
+  private async requestPairingCode(): Promise<void> {
     if (!this.auth) return
 
     const pairNode = BinaryProtocol.createNode(
@@ -113,9 +151,12 @@ export class WhatsAppClient extends EventEmitter {
   }
 
   /**
-   * Processa stanzas recebidas do WhatsApp
+   * Processa stanzas binárias recebidas do servidor do WhatsApp Web (como QR code, mensagens, stanzas iq).
+   *
+   * @param node - Estrutura BinaryNode recebida decodificada do WABinary.
+   * @internal
    */
-  private handleIncomingNode(node: BinaryNode) {
+  private handleIncomingNode(node: BinaryNode): void {
     this.emit('raw.node', node)
 
     // Trata resposta de pareamento (QR Code)
@@ -131,6 +172,18 @@ export class WhatsAppClient extends EventEmitter {
           // Formato padrão do QR Code do WhatsApp Web: ref,noisePublicKey,identityPublicKey,advSecretKey
           const qrString = `${ref},${noisePub},${pubKey},${this.auth.creds.advSecretKey}`
           this.emit('connection.update', { qr: qrString })
+
+          if (this.config.printQRInTerminal) {
+            import('qrcode-terminal')
+              .then((qrcode) => {
+                const qrGen = (qrcode as unknown as { default?: { generate: (text: string, opts?: { small: boolean }) => void }; generate: (text: string, opts?: { small: boolean }) => void }).default || qrcode
+                qrGen.generate(qrString, { small: true })
+              })
+              .catch(() => {
+                console.log('📌 QR Code gerado:', qrString)
+                console.log('💡 Dica: instale `qrcode-terminal` (npm install qrcode-terminal) para renderizar o QR Code graficamente no terminal.')
+              })
+          }
         }
       }
     }
@@ -147,7 +200,13 @@ export class WhatsAppClient extends EventEmitter {
   }
 
   /**
-   * Inicia o fluxo de conexão com o WhatsApp Web
+   * Inicia o fluxo de conexão com o WhatsApp Web e realiza o handshake criptográfico Noise.
+   *
+   * @throws {Error} Se o estado de autenticação (`auth`) não tiver sido definido antes de conectar.
+   * @example
+   * ```ts
+   * await client.connect()
+   * ```
    */
   async connect(): Promise<void> {
     if (!this.auth) {
@@ -157,7 +216,14 @@ export class WhatsAppClient extends EventEmitter {
   }
 
   /**
-   * Envia uma atualização de presença (composing, recording, available, unavailable, paused)
+   * Envia uma atualização de presença para um contato ou grupo.
+   *
+   * @param jid - O identificador JID de destino (ex: `5511999999999@s.whatsapp.net` ou `123456@g.us`).
+   * @param type - O tipo de presença: `'composing'` (digitando), `'recording'` (gravando áudio), `'available'` (online), `'unavailable'` (offline) ou `'paused'`.
+   * @example
+   * ```ts
+   * await client.sendPresenceUpdate('5511999999999@s.whatsapp.net', 'composing')
+   * ```
    */
   async sendPresenceUpdate(jid: string, type: PresenceType): Promise<void> {
     const node = this.presence.createPresenceNode(jid, type)
@@ -165,7 +231,13 @@ export class WhatsAppClient extends EventEmitter {
   }
 
   /**
-   * Marca mensagens como lidas (recibo de leitura / double blue ticks)
+   * Marca mensagens como lidas enviando o recibo de leitura (double blue check / visualizado).
+   *
+   * @param keys - Lista de identificadores de mensagem a marcar como lidas (`remoteJid`, `id` e opcionalmente `participant` em grupos).
+   * @example
+   * ```ts
+   * await client.readMessages([{ remoteJid: '5511999999999@s.whatsapp.net', id: '3EB012345' }])
+   * ```
    */
   async readMessages(keys: Array<{ remoteJid: string; id: string; participant?: string }>): Promise<void> {
     for (const key of keys) {
@@ -175,7 +247,23 @@ export class WhatsAppClient extends EventEmitter {
   }
 
   /**
-   * Envia qualquer tipo de mensagem com recursos de segurança e fila inteligente de rate limiting
+   * Envia qualquer tipo de mensagem com recursos de segurança anti-ban, simulação humana e fila inteligente de rate limiting.
+   *
+   * @param jid - O identificador JID de destino (ex: `5511999999999@s.whatsapp.net` ou `123456-789@g.us`).
+   * @param content - Conteúdo da mensagem: texto simples em string ou objeto estruturado (`{ text }`, `{ image }`, `{ audio }`, `{ video }`, `{ document }`, etc).
+   * @param options - Opções adicionais de envio, como mensagem citada (`quoted`), timestamp ou opções de encaminhamento.
+   * @returns Objeto com o ID gerado da mensagem (`messageId`).
+   * @example
+   * ```ts
+   * // Envio de texto simples
+   * const { messageId } = await client.sendMessage('5511999999999@s.whatsapp.net', 'Olá mundo!')
+   *
+   * // Envio com mídia
+   * await client.sendMessage('5511999999999@s.whatsapp.net', {
+   *   image: { url: 'https://exemplo.com/foto.jpg' },
+   *   caption: 'Foto de demonstração'
+   * })
+   * ```
    */
   async sendMessage(
     jid: string,
@@ -193,6 +281,16 @@ export class WhatsAppClient extends EventEmitter {
     return this.internalSendMessage(jid, content, options)
   }
 
+  /**
+   * Executa internamente o envio da mensagem após passar pela fila de rate limiting,
+   * aplicando simulações de presença prévias e montagem do nó WABinary.
+   *
+   * @param jid - O identificador JID de destino.
+   * @param content - Conteúdo da mensagem a ser enviada.
+   * @param options - Opções de envio de mensagem.
+   * @returns Identificador da mensagem enviada.
+   * @internal
+   */
   private async internalSendMessage(
     jid: string,
     content: AnyMessageContent | string,
@@ -233,7 +331,12 @@ export class WhatsAppClient extends EventEmitter {
   }
 
   /**
-   * Encerra a conexão
+   * Encerra a conexão com o servidor WebSocket do WhatsApp e limpa todos os timers e ouvintes ativos.
+   *
+   * @example
+   * ```ts
+   * client.disconnect()
+   * ```
    */
   disconnect(): void {
     this.socket.disconnect()
@@ -241,10 +344,39 @@ export class WhatsAppClient extends EventEmitter {
 }
 
 /**
- * Factory function para inicialização ergonômica estilo Baileys: `makeWASocket`
+ * Factory function para inicialização ergonômica estilo Baileys: `makeWASocket`.
+ *
+ * @param config - Configurações opcionais do cliente WhatsApp (auth, timeouts, safety, etc).
+ * @returns Instância configurada do cliente `WhatsAppClient`.
+ * @example
+ * ```ts
+ * import makeWASocket, { useSecureAuthState } from 'cdwa'
+ *
+ * const auth = await useSecureAuthState('./auth_info')
+ * const sock = makeWASocket({
+ *   auth,
+ *   safety: {
+ *     rateLimit: true,
+ *     simulateHumanBehavior: true
+ *   }
+ * })
+ * ```
  */
 export function makeWASocket(config: SocketConfig = {}): WhatsAppClient {
   return new WhatsAppClient(config)
 }
 
-export { useSecureAuthState }
+export {
+  useSecureAuthState,
+  makeCacheableSignalKeyStore,
+  type CacheStore,
+  type CacheableKeyStoreOptions,
+} from '../auth/index.js'
+export {
+  DisconnectReason,
+  type DisconnectReasonType,
+  DisconnectError,
+  shouldReconnect,
+  isLoggedOut,
+  getDisconnectStatusCode,
+} from '../socket/index.js'

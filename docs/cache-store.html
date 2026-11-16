@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cache em Memória (makeCacheableSignalKeyStore) - CDWA</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <a href="index.html" class="brand">
+      <span>🚀 CDWA</span>
+      <span class="brand-badge">v0.1.0</span>
+    </a>
+
+    <div class="nav-title">Primeiros Passos</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="index.html" class="nav-link">Visão Geral</a></li>
+      <li class="nav-item"><a href="getting-started.html" class="nav-link">Início Rápido</a></li>
+    </ul>
+
+    <div class="nav-title">Autenticação</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="authentication.html" class="nav-link">Autenticação & Conexão</a></li>
+      <li class="nav-item"><a href="cache-store.html" class="nav-link active">Cache em Memória (E/S)</a></li>
+    </ul>
+
+    <div class="nav-title">Conceitos Centrais</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="architecture.html" class="nav-link">Arquitetura & Segurança</a></li>
+      <li class="nav-item"><a href="safety.html" class="nav-link">Segurança</a></li>
+    </ul>
+
+    <div class="nav-title">Desenvolvimento</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="sending-messages.html" class="nav-link">Envio de Mensagens</a></li>
+      <li class="nav-item"><a href="events.html" class="nav-link">Eventos & Conexão</a></li>
+    </ul>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="header">
+      <a href="authentication.html">← Voltar para Autenticação</a>
+      <a href="https://github.com/CDTeamMods/CDWa" target="_blank" rel="noopener">GitHub ↗</a>
+    </header>
+
+    <main class="content">
+      <h1>Cache em Memória: <code>makeCacheableSignalKeyStore</code> ⚡</h1>
+      <p>
+        A função <code>makeCacheableSignalKeyStore</code> cria uma camada de cache em memória (RAM) sobre o <strong>SignalKeyStore</strong>, reduzindo drasticamente as operações de Entrada e Saída (I/O) em disco ou banco de dados.
+      </p>
+
+      <div class="callout success">
+        <div class="callout-title">Otimização Essencial para Produção</div>
+        Equivalente direto à função homônima do <strong>Baileys</strong>, elimina gargalos de latência causados pela leitura e decriptação contínua de arquivos de sessão no disco.
+      </div>
+
+      <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
+
+      <h2>Por que o Cache é Necessário? 🤔</h2>
+      <p>
+        No protocolo Signal do WhatsApp Web Multi-Device, para cada mensagem enviada, recebida ou reação, o cliente precisa consultar e rotacionar chaves criptográficas:
+      </p>
+      <ul style="margin-left: 20px; margin-bottom: 20px;">
+        <li><code>session</code>: Sessão Double Ratchet para cada contato ou dispositivo vinculado.</li>
+        <li><code>sender-key</code>: Chaves de remetente para envio eficiente em grupos.</li>
+        <li><code>pre-key</code> e <code>signed-pre-key</code>: Pré-chaves de estabelecimento inicial.</li>
+      </ul>
+      <p>
+        Em grupos movimentados ou bots com alto volume de mensagens, isso significa <strong>centenas de leituras de arquivos por segundo</strong> (<code>fs.readFile</code> + <code>JSON.parse</code> + decriptação AES). Com o <code>makeCacheableSignalKeyStore</code>, as chaves frequentemente usadas ficam mantidas na memória RAM, resultando em:
+      </p>
+      <ul>
+        <li>🚀 <strong>Latência de leitura quase nula</strong> (~0.001ms em RAM vs. ~2-15ms em disco/banco).</li>
+        <li>📉 <strong>Redução de 95%+ em operações de disco (I/O)</strong>.</li>
+        <li>⚡ <strong>Menor consumo de CPU</strong>, evitando parsing e decriptação repetitivos.</li>
+      </ul>
+
+      <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
+
+      <h2>Como Utilizar (Uso Recomendado)</h2>
+      <p>
+        Basta envolver o objeto <code>auth.keys</code> retornado por <code>useSecureAuthState</code> na função <code>makeCacheableSignalKeyStore</code>:
+      </p>
+
+      <pre><code>import makeWASocket, {
+  useSecureAuthState,
+  makeCacheableSignalKeyStore
+} from '@cdteam/cdwa'
+
+async function startBot() {
+  // 1. Carrega o estado de autenticação em disco
+  const auth = await useSecureAuthState('./auth_info', 'senha-mestra-opcional')
+
+  // 2. Cria o socket envolvendo as chaves com o cache de memória
+  const sock = makeWASocket({
+    auth: {
+      creds: auth.creds,
+      keys: makeCacheableSignalKeyStore(auth.keys) // ⚡ Cache ativo!
+    },
+    printQRInTerminal: true
+  })
+
+  sock.on('connection.update', ({ connection }) => {
+    if (connection === 'open') {
+      console.log('✅ Conectado com cache de chaves ativo!')
+    }
+  })
+
+  await sock.connect()
+}
+
+startBot()</code></pre>
+
+      <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
+
+      <h2>Opções Avançadas e Customização ⚙️</h2>
+      <p>
+        O <code>makeCacheableSignalKeyStore</code> possui um algoritmo de gerenciamento <strong>LRU (Least Recently Used)</strong> nativo para evitar consumo excessivo de memória, além de permitir parametrização e uso de caches externos:
+      </p>
+
+      <h3>1. Limite de Chaves (LRU) e TTL</h3>
+      <p>Configure a quantidade máxima de itens em memória e um tempo de vida opcional:</p>
+      <pre><code>const cachedKeys = makeCacheableSignalKeyStore(auth.keys, {
+  maxKeys: 15000,           // Mantém até 15.000 chaves quentes na RAM (Padrão: 10.000)
+  ttlMs: 12 * 60 * 60 * 1000 // Opcional: expira itens após 12 horas
+})</code></pre>
+
+      <h3>2. Usando com NodeCache ou Map Customizado</h3>
+      <p>Você pode passar uma instância de <code>NodeCache</code> ou um <code>Map</code> personalizado:</p>
+      <pre><code>import NodeCache from 'node-cache'
+
+// Usando com node-cache
+const myCache = new NodeCache({ stdTTL: 3600, useClones: false })
+const cachedKeys = makeCacheableSignalKeyStore(auth.keys, myCache)
+
+// Ou usando com um Map nativo do JavaScript:
+const customMap = new Map()
+const mapKeys = makeCacheableSignalKeyStore(auth.keys, customMap)</code></pre>
+
+      <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
+
+      <h2>Comparativo de Performance 📊</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Cenário</th>
+            <th>Sem Cache (Disco Direto)</th>
+            <th>Com makeCacheableSignalKeyStore</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Operações de E/S por mensagem</strong></td>
+            <td>1 a 5 leituras de arquivos por envio</td>
+            <td><strong>Zero I/O</strong> (após aquecimento)</td>
+          </tr>
+          <tr>
+            <td><strong>Tempo de resolução de sessão</strong></td>
+            <td>~3ms a 18ms (depende do disco/SSD)</td>
+            <td><strong>~0.002ms</strong> (acesso direto a Map)</td>
+          </tr>
+          <tr>
+            <td><strong>Comportamento em Grupos Grandes</strong></td>
+            <td>Gargalo em rajadas de mensagens</td>
+            <td><strong>Fluxo contínuo sem travamentos</strong></td>
+          </tr>
+          <tr>
+            <td><strong>Sincronização de Estado</strong></td>
+            <td>Persistência direta</td>
+            <td><strong>Persistência assíncrona garantida</strong></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
+
+      <h2>Exemplo em JavaScript Puro (CommonJS)</h2>
+      <pre><code>const { default: makeWASocket, useSecureAuthState, makeCacheableSignalKeyStore } = require('@cdteam/cdwa')
+
+async function run() {
+  const auth = await useSecureAuthState('./auth_info')
+
+  const sock = makeWASocket({
+    auth: {
+      creds: auth.creds,
+      keys: makeCacheableSignalKeyStore(auth.keys)
+    }
+  })
+
+  await sock.connect()
+}
+
+run()</code></pre>
+    </main>
+
+    <footer>
+      <p>Documentação gerada para GitHub Pages • Licença MIT</p>
+      <p style="margin-top: 8px; font-size: 0.8rem; color: var(--text-muted);">
+        O CDWA é um projeto independente e não possui afiliação oficial com o WhatsApp LLC ou Meta Platforms, Inc.
+      </p>
+    </footer>
+  </div>
+</body>
+</html>

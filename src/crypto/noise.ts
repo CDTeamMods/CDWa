@@ -2,31 +2,64 @@ import { CryptoEngine } from './index.js'
 import { sha256 } from '@noble/hashes/sha256'
 import type { KeyPair } from '../types/index.js'
 
+/**
+ * Identificador do padrão Noise Protocol utilizado pelo WhatsApp Web.
+ */
 export const NOISE_PROTOCOL_NAME = 'Noise_XX_25519_AESGCM_SHA256'
+
+/**
+ * Cabeçalho e prólogo oficial do WhatsApp para o handshake Noise ("WA\x06\x02").
+ */
 export const WA_NOISE_HEADER = new Uint8Array([87, 65, 6, 2]) // "WA\x06\x02"
 
 /**
- * Estado da cifra simétrica do Noise com contador sequencial (Nonce)
+ * Estado da cifra simétrica do Noise com contador sequencial (Nonce).
+ *
+ * Gerencia a encriptação e decriptação de stanzas com incremento automático de nonce
+ * e associação de dados autenticados (AD).
  */
 export class NoiseCipherState {
   private key: Uint8Array | null = null
   private nonce = 0
 
+  /**
+   * Cria uma instância da cifra com ou sem chave pré-estabelecida.
+   *
+   * @param key - Chave simétrica inicial (32 bytes) opcional.
+   */
   constructor(key?: Uint8Array) {
     if (key) {
       this.key = key
     }
   }
 
+  /**
+   * Indica se a cifra simétrica possui uma chave definida.
+   *
+   * @returns `true` se possuir chave ativa, caso contrário `false`.
+   */
   hasKey(): boolean {
     return this.key !== null
   }
 
-  setKey(key: Uint8Array) {
+  /**
+   * Define uma nova chave simétrica e reseta o contador de nonce para zero.
+   *
+   * @param key - Nova chave de 32 bytes.
+   */
+  setKey(key: Uint8Array): void {
     this.key = key
     this.nonce = 0
   }
 
+  /**
+   * Criptografa dados em texto plano utilizando AES-GCM com os dados autenticados (AD) fornecidos,
+   * incrementando sequencialmente o contador interno de nonce.
+   *
+   * @param ad - Dados autenticados adicionais (AD / Hash do handshake).
+   * @param plaintext - Mensagem a ser cifrada.
+   * @returns Texto cifrado com a tag de autenticação.
+   */
   encryptWithAd(ad: Uint8Array, plaintext: Uint8Array): Uint8Array {
     if (!this.key) {
       return plaintext
@@ -36,6 +69,14 @@ export class NoiseCipherState {
     return CryptoEngine.aesGcmEncrypt(this.key, plaintext, iv, ad)
   }
 
+  /**
+   * Descriptografa dados cifrados utilizando AES-GCM com os dados autenticados (AD) fornecidos,
+   * incrementando sequencialmente o contador de nonce.
+   *
+   * @param ad - Dados autenticados adicionais (AD / Hash do handshake).
+   * @param ciphertext - Texto cifrado com tag a ser decifrado.
+   * @returns Mensagem decodificada em texto plano.
+   */
   decryptWithAd(ad: Uint8Array, ciphertext: Uint8Array): Uint8Array {
     if (!this.key) {
       return ciphertext
@@ -45,6 +86,13 @@ export class NoiseCipherState {
     return CryptoEngine.aesGcmDecrypt(this.key, ciphertext, iv, ad)
   }
 
+  /**
+   * Converte o contador numérico de nonce em um buffer de 12 bytes no formato Big Endian.
+   *
+   * @param nonce - Contador inteiro sequencial.
+   * @returns Buffer de 12 bytes representando o IV.
+   * @internal
+   */
   private generateNonceBuffer(nonce: number): Uint8Array {
     const buffer = new Uint8Array(12)
     const view = new DataView(buffer.buffer)
@@ -55,7 +103,12 @@ export class NoiseCipherState {
 }
 
 /**
- * Máquina de estado do Noise XX Handshake para o WhatsApp Web
+ * Máquina de estado do Noise XX Handshake para o WhatsApp Web.
+ *
+ * Executa as 3 etapas de troca de chaves:
+ * 1. -> e (envio da chave efêmera com cabeçalho WA)
+ * 2. <- e, ee, s, es (recebimento do Server Hello)
+ * 3. -> s, se (envio da chave estática e payload do cliente, derivando as chaves de transporte)
  */
 export class NoiseHandshake {
   private symmetricState: {
@@ -68,6 +121,11 @@ export class NoiseHandshake {
   private remoteEphemeral: Uint8Array | null = null
   private remoteStatic: Uint8Array | null = null
 
+  /**
+   * Inicializa o processo de handshake Noise XX com a chave de identidade estática do cliente.
+   *
+   * @param localStaticKey - Par de chaves Curve25519 estático local.
+   */
   constructor(localStaticKey: KeyPair) {
     this.localStatic = localStaticKey
     this.localEphemeral = CryptoEngine.generateKeyPair()
@@ -84,14 +142,26 @@ export class NoiseHandshake {
     this.mixHash(WA_NOISE_HEADER)
   }
 
-  private mixHash(data: Uint8Array) {
+  /**
+   * Concatena dados ao hash de handshake atual e recalcula o SHA-256 (mixHash).
+   *
+   * @param data - Dados a serem incorporados no hash de autenticação do handshake.
+   * @internal
+   */
+  private mixHash(data: Uint8Array): void {
     const merged = new Uint8Array(this.symmetricState.h.length + data.length)
     merged.set(this.symmetricState.h, 0)
     merged.set(data, this.symmetricState.h.length)
     this.symmetricState.h = sha256(merged)
   }
 
-  private mixKey(data: Uint8Array) {
+  /**
+   * Atualiza a chaining key (ck) e deriva nova chave simétrica utilizando HKDF (mixKey).
+   *
+   * @param data - Material de chave gerado por Diffie-Hellman.
+   * @internal
+   */
+  private mixKey(data: Uint8Array): void {
     // HKDF-Extract e Expand com Chaining Key
     const derived = CryptoEngine.deriveKey(data, '', this.symmetricState.ck, 64)
     this.symmetricState.ck = derived.slice(0, 32)
@@ -100,7 +170,9 @@ export class NoiseHandshake {
   }
 
   /**
-   * Passo 1: Início do Handshake -> Envia chave efêmera local (e)
+   * Passo 1: Inicia o Handshake enviando a chave efêmera local (`e`) precedida pelo prólogo `WA_NOISE_HEADER`.
+   *
+   * @returns Buffer contendo o cabeçalho e a chave pública efêmera local.
    */
   startHandshake(): Uint8Array {
     this.mixHash(this.localEphemeral.public)
@@ -112,7 +184,10 @@ export class NoiseHandshake {
   }
 
   /**
-   * Passo 2: Recebe resposta do servidor WhatsApp <- (e, ee, s, es)
+   * Passo 2: Processa a resposta do servidor WhatsApp (Server Hello: `e`, `ee`, `s`, `es`).
+   *
+   * @param serverBuffer - Resposta binária enviada pelo servidor.
+   * @returns Payload descriptografado emitido pelo servidor.
    */
   processServerHello(serverBuffer: Uint8Array): Uint8Array {
     // Extrai a chave efêmera remota (primeiros 32 bytes)
@@ -141,8 +216,12 @@ export class NoiseHandshake {
   }
 
   /**
-   * Passo 3: Envia resposta final de autenticação do cliente -> (s, se) + payload
-   * Retorna os CipherStates de leitura e escrita para uso no WebSocket
+   * Passo 3: Envia a resposta final de autenticação do cliente (`s`, `se` + payload).
+   * Deriva as chaves simétricas finais de transporte para leitura e escrita.
+   *
+   * @param payload - Dados de identificação do cliente e versão da aplicação.
+   * @returns Objeto com a mensagem final de handshake (`handshakeMessage`) e os cipher states de leitura (`readCipher`) e escrita (`writeCipher`).
+   * @throws {Error} Se a chave efêmera remota não tiver sido recebida no passo 2.
    */
   finishHandshake(payload: Uint8Array): {
     handshakeMessage: Uint8Array

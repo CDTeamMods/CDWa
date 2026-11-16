@@ -20,11 +20,23 @@ const MEDIA_HKDF_INFO: Record<MediaType, string> = {
 }
 
 /**
- * Pipeline de criptografia E2EE para mídias do WhatsApp
+ * Pipeline de criptografia E2EE para mídias do WhatsApp.
+ *
+ * Implementa a especificação oficial de derivação de chaves via HKDF e encriptação com AES-256-CBC
+ * com verificação de integridade HMAC-SHA256 truncada em 10 bytes.
  */
 export class MediaCrypto {
   /**
-   * Criptografa o arquivo de mídia de acordo com o padrão RFC do WhatsApp
+   * Criptografa o buffer de arquivo de mídia de acordo com o padrão RFC do WhatsApp.
+   *
+   * @param mediaBuffer - Bytes originais do arquivo de mídia em memória.
+   * @param type - Tipo da mídia a ser cifrada: `'image'`, `'video'`, `'audio'` ou `'document'`.
+   * @returns Estrutura `EncryptedMediaResult` contendo `mediaKey`, `ciphertext`, `fileSha256`, `fileEncSha256` e `mac`.
+   * @example
+   * ```ts
+   * const encrypted = MediaCrypto.encryptMedia(fileBuffer, 'image')
+   * console.log('Chave de mídia:', encrypted.mediaKey)
+   * ```
    */
   static encryptMedia(mediaBuffer: Uint8Array, type: MediaType): EncryptedMediaResult {
     // 1. Gera uma chave aleatória de 32 bytes para a mídia

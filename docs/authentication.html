@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Autenticação & Estado - CDWA</title>
+  <title>Autenticação & QR Code - CDWA</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -19,11 +19,16 @@
       <li class="nav-item"><a href="getting-started.html" class="nav-link">Início Rápido</a></li>
     </ul>
 
+    <div class="nav-title">Autenticação</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="authentication.html" class="nav-link active">Autenticação & Conexão</a></li>
+      <li class="nav-item"><a href="cache-store.html" class="nav-link">Cache em Memória (E/S)</a></li>
+    </ul>
+
     <div class="nav-title">Conceitos Centrais</div>
     <ul class="nav-list">
       <li class="nav-item"><a href="architecture.html" class="nav-link">Arquitetura & Segurança</a></li>
-      <li class="nav-item"><a href="authentication.html" class="nav-link active">Autenticação & Estado</a></li>
-      <li class="nav-item"><a href="safety.html" class="nav-link">Segurança 🛡️</a></li>
+      <li class="nav-item"><a href="safety.html" class="nav-link">Segurança</a></li>
     </ul>
 
     <div class="nav-title">Desenvolvimento</div>
@@ -40,35 +45,222 @@
     </header>
 
     <main class="content">
-      <h1>Autenticação & Gerenciamento de Estado 🔑</h1>
-      <p>Gerencie as chaves do Signal e credenciais de sessão do WhatsApp sem expor dados confidenciais.</p>
-
-      <h2>1. useSecureAuthState</h2>
+      <h1>Autenticação & Conexão no WhatsApp 🔑</h1>
       <p>
-        Proteja todos os arquivos de sessão gerados pelo WhatsApp com <strong>AES-256-GCM</strong>:
+        Aprenda como iniciar a sessão, emitir o <strong>QR Code visual no terminal</strong>, conectar seu dispositivo ao WhatsApp Web Multi-Device e proteger as chaves criptográficas com segurança at-rest.
       </p>
-      <pre><code>import { useSecureAuthState } from 'cdwa'
-
-// Senha mestra via variável de ambiente
-const secret = process.env.SESSION_SECRET || 'senha-mestra-longa'
-
-const auth = await useSecureAuthState('./auth_info', secret)
-
-const sock = makeWASocket({ auth })</code></pre>
 
       <div class="callout success">
-        <div class="callout-title">Dica de Produção</div>
-        Nunca adicione a pasta <code>./auth_info</code> ao Git. Adicione-a ao seu <code>.gitignore</code> para evitar o vazamento acidental de chaves.
+        <div class="callout-title">Protocolo Multi-Device Nativo</div>
+        O CDWA conecta diretamente aos servidores WebSocket do WhatsApp (Noise Handshake) sem depender de navegadores pesados ou emuladores (como Puppeteer ou Playwright).
       </div>
 
-      <h2>2. Armazenamento Remoto (Redis, PostgreSQL, MongoDB)</h2>
+      <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
+
+      <h2 id="conectar">1. Como Conectar no WhatsApp</h2>
       <p>
-        Para hospedar seu bot em servidores que não possuem persistência de disco (ex: Heroku, Render, AWS Lambda, Kubernetes), você pode implementar sua própria interface <code>SignalKeyStore</code> e carregar as credenciais a partir de qualquer banco de dados.
+        Para conectar seu bot ou aplicação ao WhatsApp, o fluxo consiste em 4 passos simples:
       </p>
+      <ol style="margin-left: 20px; margin-bottom: 20px;">
+        <li><strong>Carregar o estado de autenticação:</strong> Usando <code>useSecureAuthState(diretório, senhaMestra)</code>.</li>
+        <li><strong>Instanciar o socket:</strong> Passando o objeto de autenticação para <code>makeWASocket({ auth })</code>.</li>
+        <li><strong>Ouvir o evento <code>connection.update</code>:</strong> Para capturar o QR Code e detectar quando a conexão for aberta.</li>
+        <li><strong>Iniciar a conexão:</strong> Chamando <code>await sock.connect()</code>.</li>
+      </ol>
+
+      <h3>Código Completo de Conexão (TypeScript / ES Modules)</h3>
+      <pre><code>import makeWASocket, {
+  useSecureAuthState,
+  shouldReconnect,
+  isLoggedOut,
+  DisconnectError
+} from '@cdteam/cdwa'
+import qrcode from 'qrcode-terminal'
+
+async function connectToWhatsApp() {
+  // 1. Carrega ou cria credenciais em pasta protegida (opcionalmente com senha)
+  const auth = await useSecureAuthState('./auth_info', 'minha-chave-mestra-secreta')
+
+  // 2. Inicializa o cliente WhatsApp
+  const sock = makeWASocket({
+    auth,
+    // printQRInTerminal: true // Opcional: renderização automática nativa
+  })
+
+  // 3. Monitora o ciclo de vida da conexão
+  sock.on('connection.update', async (update) => {
+    const { connection, lastDisconnect, qr } = update
+
+    // Emissão do QR Code
+    if (qr) {
+      console.log('\n📱 Escaneie o QR Code abaixo no WhatsApp:')
+      qrcode.generate(qr, { small: true })
+    }
+
+    // Conexão estabelecida com sucesso
+    if (connection === 'open') {
+      console.log('✅ Conexão estabelecida com sucesso no WhatsApp!')
+    }
+
+    // Tratamento de queda ou encerramento
+    if (connection === 'close') {
+      const error = lastDisconnect?.error
+
+      if (shouldReconnect(error)) {
+        console.log('🔄 Conexão interrompida. Reconectando...')
+        await connectToWhatsApp()
+      } else if (isLoggedOut(error)) {
+        console.log('❌ Sessão desvinculada pelo celular. Remova ./auth_info e gere novo QR.')
+      }
+    }
+  })
+
+  // 4. Conecta aos servidores do WhatsApp
+  await sock.connect()
+}
+
+connectToWhatsApp()</code></pre>
+
+      <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
+
+      <h2 id="qrcode">2. Como Emitir o QR Code no Terminal</h2>
+      <p>
+        O WhatsApp Web envia uma string de pareamento no formato <code>ref,noisePublicKey,identityPublicKey,advSecretKey</code>. Você pode convertê-la em um QR Code gráfico no terminal das seguintes formas:
+      </p>
+
+      <h3>Método A: Usando a biblioteca <code>qrcode-terminal</code> (Recomendado)</h3>
+      <p>Instale o pacote auxiliar no seu projeto:</p>
+      <pre><code>npm install qrcode-terminal
+npm install -D @types/qrcode-terminal</code></pre>
+
+      <p>Em seguida, use a função <code>qrcode.generate</code> com a opção <code>{ small: true }</code> para caber perfeitamente no console:</p>
+      <pre><code>import qrcode from 'qrcode-terminal'
+
+sock.on('connection.update', ({ qr }) => {
+  if (qr) {
+    console.log('📌 Aponte a câmera do seu smartphone:')
+    qrcode.generate(qr, { small: true })
+  }
+})</code></pre>
+
+      <h3>Método B: Usando a flag nativa <code>printQRInTerminal: true</code></h3>
+      <p>
+        O CDWA possui suporte embutido. Ao passar <code>printQRInTerminal: true</code> nas opções de inicialização, a biblioteca renderiza o QR Code automaticamente no terminal se <code>qrcode-terminal</code> estiver instalado:
+      </p>
+      <pre><code>const sock = makeWASocket({
+  auth,
+  printQRInTerminal: true // Emite o QR Code diretamente no console
+})</code></pre>
+
+      <div class="callout warning">
+        <div class="callout-title">Como escanear no smartphone</div>
+        <ol style="margin-left: 20px; margin-top: 8px;">
+          <li>Abra o WhatsApp no seu celular (Android ou iPhone).</li>
+          <li>Toque nos <strong>três pontos verticais</strong> (Android) ou em <strong>Configurações / Ajustes</strong> (iOS).</li>
+          <li>Selecione <strong>Aparelhos Conectados</strong>.</li>
+          <li>Toque em <strong>Conectar um Aparelho</strong>.</li>
+          <li>Aponte a câmera para o QR Code desenhado no seu terminal.</li>
+        </ol>
+      </div>
+
+      <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
+
+      <h2>3. Armazenamento Seguro de Sessão (useSecureAuthState)</h2>
+      <p>
+        Diferente de bibliotecas legadas que salvam tokens em texto plano desprotegido, o CDWA permite encriptar todo o armazenamento local at-rest com <strong>AES-256-GCM</strong> e derivação de chave <strong>HKDF (RFC 5869)</strong>:
+      </p>
+
+      <pre><code>import { useSecureAuthState } from '@cdteam/cdwa'
+
+// 1. Armazenamento básico sem encriptação at-rest
+const authSimples = await useSecureAuthState('./pasta_sessao')
+
+// 2. Armazenamento reforçado com senha mestra
+const senhaMestra = process.env.WA_SECRET || 'chave-secreta-forte-e-longa-32-chars'
+const authSeguro = await useSecureAuthState('./pasta_sessao', senhaMestra)</code></pre>
+
+      <div class="callout success">
+        <div class="callout-title">Reaproveitamento de Conexão</div>
+        Após escanear o QR Code uma vez, as chaves ficam salvas na pasta informada. Ao reiniciar sua aplicação, o CDWA se reconectará automaticamente <strong>sem precisar escanear o QR Code novamente</strong>!
+      </div>
+
+      <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
+
+      <h2>4. Cache em Memória com makeCacheableSignalKeyStore ⚡</h2>
+      <p>
+        No protocolo do WhatsApp, cada mensagem enviada ou recebida (especialmente em grupos grandes com centenas de participantes) necessita consultar e atualizar chaves do Signal (<code>session</code>, <code>sender-key</code>, <code>pre-key</code>).
+      </p>
+      <p>
+        Sem uma camada de cache, cada operação força leituras e escritas repetitivas no disco (<code>fs.readFile</code>) ou no banco de dados. A função <code>makeCacheableSignalKeyStore</code> cria uma <strong>camada de cache em memória de alta performance</strong> que reduz drasticamente as operações de E/S (I/O) e elimina gargalos de latência:
+      </p>
+
+      <pre><code>import makeWASocket, {
+  useSecureAuthState,
+  makeCacheableSignalKeyStore
+} from '@cdteam/cdwa'
+
+const auth = await useSecureAuthState('./auth_info')
+
+const sock = makeWASocket({
+  auth: {
+    creds: auth.creds,
+    // Reduz drasticamente E/S em disco/banco armazenando chaves quentes na RAM:
+    keys: makeCacheableSignalKeyStore(auth.keys)
+  }
+})</code></pre>
+
+      <div class="callout success">
+        <div class="callout-title">Compatibilidade Total com o Baileys</div>
+        A função funciona de forma idêntica ao Baileys. Você também pode passar um <code>Map</code> personalizado, instâncias de <code>NodeCache</code> ou configurar limites de memória (<code>maxKeys</code>) e tempo de vida (<code>ttlMs</code>):
+      </div>
+
+      <pre><code>// Exemplo com configurações de capacidade máxima de memória (LRU) e TTL:
+const cachedKeys = makeCacheableSignalKeyStore(auth.keys, {
+  maxKeys: 20000, // Máximo de 20.000 chaves em memória (evita vazamento de RAM)
+  ttlMs: 24 * 60 * 60 * 1000 // TTL de 24 horas (opcional)
+})</code></pre>
+
+      <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
+
+      <h2>5. Exemplo em JavaScript Puro (CommonJS)</h2>
+      <p>Caso esteja trabalhando em projetos legados ou scripts com <code>require()</code>:</p>
+      <pre><code>const { default: makeWASocket, useSecureAuthState, shouldReconnect } = require('@cdteam/cdwa')
+const qrcode = require('qrcode-terminal')
+
+async function run() {
+  const auth = await useSecureAuthState('./auth_info')
+  const sock = makeWASocket({ auth })
+
+  sock.on('connection.update', (update) => {
+    const { connection, qr, lastDisconnect } = update
+
+    if (qr) {
+      qrcode.generate(qr, { small: true })
+    }
+
+    if (connection === 'open') {
+      console.log('✅ Bot conectado via CommonJS!')
+    }
+
+    if (connection === 'close') {
+      if (shouldReconnect(lastDisconnect?.error)) {
+        console.log('Reconectando...')
+        run()
+      }
+    }
+  })
+
+  await sock.connect()
+}
+
+run()</code></pre>
     </main>
 
     <footer>
-      Documentação gerada para GitHub Pages • Licença MIT
+      <p>Documentação gerada para GitHub Pages • Licença MIT</p>
+      <p style="margin-top: 8px; font-size: 0.8rem; color: var(--text-muted);">
+        O CDWA é um projeto independente e não possui afiliação oficial com o WhatsApp LLC ou Meta Platforms, Inc.
+      </p>
     </footer>
   </div>
 </body>

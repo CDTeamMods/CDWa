@@ -19,11 +19,16 @@
       <li class="nav-item"><a href="getting-started.html" class="nav-link">Início Rápido</a></li>
     </ul>
 
+    <div class="nav-title">Autenticação</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="authentication.html" class="nav-link">Autenticação & Conexão</a></li>
+      <li class="nav-item"><a href="cache-store.html" class="nav-link">Cache em Memória (E/S)</a></li>
+    </ul>
+
     <div class="nav-title">Conceitos Centrais</div>
     <ul class="nav-list">
       <li class="nav-item"><a href="architecture.html" class="nav-link">Arquitetura & Segurança</a></li>
-      <li class="nav-item"><a href="authentication.html" class="nav-link">Autenticação & Estado</a></li>
-      <li class="nav-item"><a href="safety.html" class="nav-link">Segurança 🛡️</a></li>
+      <li class="nav-item"><a href="safety.html" class="nav-link">Segurança</a></li>
     </ul>
 
     <div class="nav-title">Desenvolvimento</div>
@@ -44,21 +49,112 @@
       <p>O cliente CDWA emite eventos tipados para que sua aplicação reaja a mudanças de conexão e mensagens.</p>
 
       <h2>1. connection.update</h2>
+      <p>Disparado sempre que o estado da conexão muda, um QR Code é emitido ou ocorre uma desconexão.</p>
       <pre><code>sock.on('connection.update', (update) => {
   const { connection, lastDisconnect, qr, isNewLogin } = update
 
   if (qr) {
-    console.log('📌 Novo QR Code:', qr)
+    console.log('📌 Novo QR Code disponível:', qr)
   }
 
   if (connection === 'open') {
-    console.log('🟢 Bot online e conectado!')
+    console.log('🟢 Bot online e conectado com sucesso!')
   }
 
   if (connection === 'close') {
     console.log('🔴 Conexão finalizada:', lastDisconnect?.error?.message)
   }
 })</code></pre>
+
+      <h2>Inspecionando Erros de Desconexão 🔍</h2>
+      <p>
+        O CDWA fornece a classe <code>DisconnectError</code> e funções auxiliares (<code>shouldReconnect</code>, <code>isLoggedOut</code>, <code>getDisconnectStatusCode</code>) para inspecionar com precisão o motivo de uma queda e decidir se deve reconectar:
+      </p>
+
+      <pre><code>import makeWASocket, {
+  DisconnectError,
+  DisconnectReason,
+  shouldReconnect,
+  isLoggedOut,
+  getDisconnectStatusCode
+} from '@cdteam/cdwa'
+
+sock.on('connection.update', async ({ connection, lastDisconnect }) => {
+  if (connection === 'close') {
+    const error = lastDisconnect?.error
+
+    // 1. Verificação rápida com helper inteligente
+    const canReconnect = shouldReconnect(error)
+    console.log(`Conexão encerrada. Pode reconectar automaticamente?`, canReconnect)
+
+    // 2. Inspeção detalhada através da classe DisconnectError
+    if (error instanceof DisconnectError) {
+      console.log('Código de status HTTP/WS:', error.statusCode)
+      console.log('Descrição em português:', error.reason)
+      console.log('Motivo bruto do socket:', error.rawReason)
+      console.log('Foi logout do celular (401)?', error.isLoggedOut)
+      console.log('Recomendado reconectar?', error.shouldReconnect)
+    }
+
+    // 3. Tomada de decisão para reconexão
+    if (canReconnect) {
+      console.log('Tentando reconectar aos servidores do WhatsApp...')
+      await sock.connect()
+    } else if (isLoggedOut(error)) {
+      console.log('❌ O usuário desvinculou o aparelho pelo WhatsApp no celular. Novo QR Code necessário.')
+    }
+  }
+})</code></pre>
+
+      <h3>Tabela de Códigos de Desconexão (DisconnectReason)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Constante</th>
+            <th>Significado</th>
+            <th>Reconectar?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>401</code></td>
+            <td><code>DisconnectReason.loggedOut</code></td>
+            <td>Sessão desvinculada ou encerrada pelo celular</td>
+            <td>❌ Não (Requer novo QR)</td>
+          </tr>
+          <tr>
+            <td><code>403</code></td>
+            <td><code>DisconnectReason.forbidden</code></td>
+            <td>Acesso bloqueado ou conta restrita</td>
+            <td>❌ Não</td>
+          </tr>
+          <tr>
+            <td><code>408</code></td>
+            <td><code>DisconnectReason.timedOut</code> / <code>connectionLost</code></td>
+            <td>Timeout ou perda de ping/pong de rede</td>
+            <td>✅ Sim</td>
+          </tr>
+          <tr>
+            <td><code>428</code></td>
+            <td><code>DisconnectReason.connectionClosed</code></td>
+            <td>Socket encerrado normalmente pelo servidor</td>
+            <td>✅ Sim</td>
+          </tr>
+          <tr>
+            <td><code>440</code></td>
+            <td><code>DisconnectReason.connectionReplaced</code></td>
+            <td>Conexão sobreposta por outra sessão aberta</td>
+            <td>❌ Não</td>
+          </tr>
+          <tr>
+            <td><code>515</code></td>
+            <td><code>DisconnectReason.restartRequired</code></td>
+            <td>Reinício solicitado pelo WhatsApp para sincronizar</td>
+            <td>✅ Sim</td>
+          </tr>
+        </tbody>
+      </table>
 
       <h2>2. messages.upsert</h2>
       <pre><code>sock.on('messages.upsert', (data) => {

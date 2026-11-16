@@ -20,11 +20,16 @@
       <li class="nav-item"><a href="getting-started.html" class="nav-link">Início Rápido</a></li>
     </ul>
 
+    <div class="nav-title">Autenticação</div>
+    <ul class="nav-list">
+      <li class="nav-item"><a href="authentication.html" class="nav-link">Autenticação & Conexão</a></li>
+      <li class="nav-item"><a href="cache-store.html" class="nav-link">Cache em Memória (E/S)</a></li>
+    </ul>
+
     <div class="nav-title">Conceitos Centrais</div>
     <ul class="nav-list">
       <li class="nav-item"><a href="architecture.html" class="nav-link">Arquitetura & Segurança</a></li>
-      <li class="nav-item"><a href="authentication.html" class="nav-link">Autenticação & Estado</a></li>
-      <li class="nav-item"><a href="safety.html" class="nav-link">Segurança 🛡️</a></li>
+      <li class="nav-item"><a href="safety.html" class="nav-link">Segurança</a></li>
     </ul>
 
     <div class="nav-title">Desenvolvimento</div>
@@ -46,6 +51,11 @@
       <p>
         O <strong>CDWA</strong> é uma biblioteca moderna, de alta performance e com foco absoluto em <strong>segurança criptográfica</strong> para o protocolo WhatsApp Web Multi-Device, desenhada para Node.js e TypeScript.
       </p>
+
+      <div class="callout warning">
+        <div class="callout-title">⚖️ Aviso Legal / Disclaimer</div>
+        O <strong>CDWA</strong> é um projeto independente e de código aberto. <strong>Não somos afiliados, associados, autorizados, endossados ou de qualquer forma oficialmente conectados ao WhatsApp LLC, à Meta Platforms, Inc.</strong> ou a qualquer uma de suas subsidiárias. O nome "WhatsApp", bem como marcas registradas relacionadas, pertencem exclusivamente a seus respectivos titulares.
+      </div>
 
       <div class="callout success">
         <div class="callout-title">Por que o CDWA?</div>
@@ -88,15 +98,20 @@
       <h2>Navegação Rápida</h2>
       <ul>
         <li><a href="getting-started.html"><strong>Início Rápido</strong></a>: Instalação e seu primeiro bot conectado em 2 minutos.</li>
+        <li><a href="authentication.html"><strong>Autenticação & QR Code</strong></a>: Como conectar no WhatsApp e emitir o QR Code no terminal.</li>
+        <li><a href="cache-store.html"><strong>Cache de Chaves (E/S)</strong></a>: Redução drástica de I/O em disco com <code>makeCacheableSignalKeyStore</code>.</li>
         <li><a href="safety.html"><strong>Segurança</strong></a>: Fila anti-flood com simulação de digitação humana e blue ticks.</li>
         <li><a href="architecture.html"><strong>Arquitetura & Segurança</strong></a>: Detalhes do Noise Protocol Handshake e criptografia ponta a ponta.</li>
         <li><a href="sending-messages.html"><strong>Envio de Mensagens</strong></a>: Como enviar textos, fotos, vídeos, notas de voz, GPS e contatos.</li>
-        <li><a href="events.html"><strong>Manipulação de Eventos</strong></a>: Tratamento de status de conexão e novas mensagens.</li>
+        <li><a href="events.html"><strong>Manipulação de Eventos</strong></a>: Tratamento de status de conexão, reconexão e mensagens.</li>
       </ul>
     </main>
 
     <footer>
-      Documentação gerada para GitHub Pages • Licença MIT
+      <p>Documentação gerada para GitHub Pages • Licença MIT</p>
+      <p style="margin-top: 8px; font-size: 0.8rem; color: var(--text-muted);">
+        O CDWA é um projeto independente e de código aberto, não sendo afiliado nem endossado pelo WhatsApp LLC ou Meta Platforms, Inc.
+      </p>
     </footer>
   </div>
 </body>

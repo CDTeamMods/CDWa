@@ -2,10 +2,22 @@ import WebSocket from 'ws'
 import { EventEmitter } from 'events'
 import { NoiseHandshake, NoiseCipherState } from '../crypto/noise.js'
 import { BinaryProtocol } from '../binary/index.js'
+import { DisconnectError } from './errors.js'
 import type { SocketConfig, ConnectionState, ConnectionUpdate, BinaryNode, KeyPair } from '../types/index.js'
 
+export * from './errors.js'
+
+/**
+ * URL padrão do endpoint WebSocket do WhatsApp Web.
+ */
 export const DEFAULT_WA_WS_URL = 'wss://web.whatsapp.com/ws/chat'
 
+/**
+ * Gerenciador da camada de transporte WebSocket com suporte nativo a Noise Handshake e WABinary framing.
+ *
+ * Responsável por abrir a conexão física, negociar chaves via protocolo Noise XX,
+ * manter o canal ativo com pings periódicos e encapsular/desencapsular stanzas binárias.
+ */
 export class WhatsAppSocket extends EventEmitter {
   private ws: WebSocket | null = null
   private config: SocketConfig
@@ -18,6 +30,11 @@ export class WhatsAppSocket extends EventEmitter {
   private readCipher: NoiseCipherState | null = null
   private isHandshakeComplete = false
 
+  /**
+   * Cria uma nova instância do gerenciador de socket WebSocket.
+   *
+   * @param config - Configurações opcionais de conexão (url, timeouts, intervalos de keep-alive).
+   */
   constructor(config: SocketConfig = {}) {
     super()
     this.config = {
@@ -28,17 +45,36 @@ export class WhatsAppSocket extends EventEmitter {
     }
   }
 
+  /**
+   * Retorna o estado atual da conexão WebSocket (`'connecting'`, `'open'` ou `'close'`).
+   */
   get connectionState(): ConnectionState {
     return this.state
   }
 
-  private updateConnection(update: ConnectionUpdate) {
+  /**
+   * Atualiza o estado da conexão e emite o evento `connection.update`.
+   *
+   * @param update - Objeto contendo os dados de mudança de estado da conexão.
+   * @internal
+   */
+  private updateConnection(update: ConnectionUpdate): void {
     if (update.connection) {
       this.state = update.connection
     }
     this.emit('connection.update', update)
   }
 
+  /**
+   * Inicia a conexão WebSocket com os servidores do WhatsApp e dispara o handshake criptográfico Noise.
+   *
+   * @param staticKey - Par de chaves Curve25519 estático local do cliente (Noise Key).
+   * @returns Promessa resolvida quando a conexão for aberta ou rejeitada em caso de falha imediata.
+   * @example
+   * ```ts
+   * await socket.connect(creds.noiseKey)
+   * ```
+   */
   async connect(staticKey: KeyPair): Promise<void> {
     if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
       return
@@ -73,11 +109,12 @@ export class WhatsAppSocket extends EventEmitter {
 
     this.ws.on('close', (code: number, reason: Buffer) => {
       this.cleanup()
+      const disconnectError = new DisconnectError(code, undefined, reason)
       this.updateConnection({
         connection: 'close',
         lastDisconnect: {
-          error: new Error(`WebSocket closed with code ${code}: ${reason.toString()}`),
-          date: new Date(),
+          error: disconnectError,
+          date: disconnectError.date,
         },
       })
     })
@@ -88,18 +125,23 @@ export class WhatsAppSocket extends EventEmitter {
   }
 
   /**
-   * Envia a mensagem inicial do Noise Handshake
+   * Envia a mensagem de início do Noise Handshake contendo o prólogo e a chave efêmera local.
+   *
+   * @internal
    */
-  private initiateNoiseHandshake() {
+  private initiateNoiseHandshake(): void {
     if (!this.noise) return
     const initialPayload = this.noise.startHandshake()
     this.sendRaw(initialPayload)
   }
 
   /**
-   * Trata frames recebidos pelo WebSocket
+   * Processa frames brutos recebidos via WebSocket, delegando para handshake ou descriptografia WABinary.
+   *
+   * @param frame - Bytes recebidos no frame do WebSocket.
+   * @internal
    */
-  private handleIncomingFrame(frame: Uint8Array) {
+  private handleIncomingFrame(frame: Uint8Array): void {
     if (!this.isHandshakeComplete) {
       this.handleHandshakeFrame(frame)
       return
@@ -120,9 +162,12 @@ export class WhatsAppSocket extends EventEmitter {
   }
 
   /**
-   * Conclui as etapas do Noise Handshake
+   * Conclui as etapas de handshake com os dados recebidos do servidor do WhatsApp.
+   *
+   * @param frame - Frame com o Server Hello recebido.
+   * @internal
    */
-  private handleHandshakeFrame(frame: Uint8Array) {
+  private handleHandshakeFrame(frame: Uint8Array): void {
     if (!this.noise) return
 
     try {
@@ -150,7 +195,14 @@ export class WhatsAppSocket extends EventEmitter {
   }
 
   /**
-   * Envia uma stanza estruturada, codificando em WABinary e criptografando com o Noise Write Cipher
+   * Envia uma stanza estruturada, codificando em WABinary e criptografando com o Noise Write Cipher.
+   *
+   * @param node - Estrutura `BinaryNode` a ser codificada e enviada.
+   * @throws {Error} Se o handshake Noise ainda não tiver sido concluído.
+   * @example
+   * ```ts
+   * socket.sendNode({ tag: 'presence', attrs: { type: 'available' } })
+   * ```
    */
   sendNode(node: BinaryNode): void {
     if (!this.isHandshakeComplete || !this.writeCipher) {
@@ -171,6 +223,13 @@ export class WhatsAppSocket extends EventEmitter {
     this.sendRaw(frame)
   }
 
+  /**
+   * Envia dados binários diretamente pelo socket WebSocket subjacente.
+   *
+   * @param data - Bytes a serem transmitidos.
+   * @throws {Error} Se o WebSocket não estiver no estado aberto (`OPEN`).
+   * @internal
+   */
   private sendRaw(data: Uint8Array): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
       throw new Error('Cannot send raw data: WebSocket is not open')
@@ -178,6 +237,11 @@ export class WhatsAppSocket extends EventEmitter {
     this.ws.send(data)
   }
 
+  /**
+   * Inicia o intervalo de keep-alive (WebSocket Ping) para manter a conexão aberta.
+   *
+   * @internal
+   */
   private startKeepAlive(): void {
     this.stopKeepAlive()
     this.pingInterval = setInterval(() => {
@@ -187,6 +251,11 @@ export class WhatsAppSocket extends EventEmitter {
     }, this.config.keepAliveIntervalMs)
   }
 
+  /**
+   * Interrompe o timer de keep-alive.
+   *
+   * @internal
+   */
   private stopKeepAlive(): void {
     if (this.pingInterval) {
       clearInterval(this.pingInterval)
@@ -194,6 +263,11 @@ export class WhatsAppSocket extends EventEmitter {
     }
   }
 
+  /**
+   * Limpa recursos internos, timers e listeners da conexão atual.
+   *
+   * @internal
+   */
   private cleanup(): void {
     this.stopKeepAlive()
     this.isHandshakeComplete = false
@@ -206,6 +280,14 @@ export class WhatsAppSocket extends EventEmitter {
     }
   }
 
+  /**
+   * Encerra a conexão WebSocket e emite status de conexão fechada.
+   *
+   * @example
+   * ```ts
+   * socket.disconnect()
+   * ```
+   */
   disconnect(): void {
     this.cleanup()
     this.updateConnection({ connection: 'close' })

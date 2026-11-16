@@ -1,5 +1,5 @@
 /**
- * Fingerprints modernas e atualizadas do WhatsApp Web para evitar detecção de clientes automatizados
+ * Fingerprints modernas e atualizadas do WhatsApp Web para evitar detecção de clientes automatizados.
  */
 
 export interface BrowserConfig {
@@ -30,9 +30,20 @@ export const MODERN_BROWSERS: BrowserConfig[] = [
   },
 ]
 
+/**
+ * Utilitários de simulação de perfil de navegador para mitigar identificação de bots.
+ */
 export class BrowserProfile {
   /**
-   * Retorna um perfil de navegador moderno aleatório para simular um browser real
+   * Retorna um perfil de navegador moderno aleatório (ex: Chrome Windows, Chrome macOS, Edge Windows)
+   * para emular um navegador autêntico perante os servidores do WhatsApp.
+   *
+   * @returns Configuração de perfil de navegador (`BrowserConfig`).
+   * @example
+   * ```ts
+   * const profile = BrowserProfile.getRandomProfile()
+   * console.log(profile.browser, profile.version)
+   * ```
    */
   static getRandomProfile(): BrowserConfig {
     const index = Math.floor(Math.random() * MODERN_BROWSERS.length)
@@ -40,7 +51,14 @@ export class BrowserProfile {
   }
 
   /**
-   * Gera o User-Agent correspondente
+   * Gera o cabeçalho User-Agent formatado correspondente ao perfil especificado ou aleatório.
+   *
+   * @param profile - Perfil do navegador desejado (se omitido, sorteia um perfil moderno).
+   * @returns String contendo o cabeçalho User-Agent completo.
+   * @example
+   * ```ts
+   * const ua = BrowserProfile.getUserAgent()
+   * ```
    */
   static getUserAgent(profile: BrowserConfig = this.getRandomProfile()): string {
     if (profile.os.includes('Windows')) {

@@ -4,11 +4,32 @@ import type { AnyMessageContent, MessageOptions } from './types.js'
 import type { BinaryNode } from '../types/index.js'
 
 /**
- * Construtor de nós e stanzas de mensagens do WhatsApp
+ * Construtor de nós e stanzas de mensagens do WhatsApp.
+ *
+ * Responsável por traduzir diferentes tipos de conteúdos (texto, imagem, vídeo, áudio,
+ * documentos, localização, contatos, reações) em stanzas `<message>` válidas para o protocolo WABinary.
  */
 export class MessageBuilder {
   /**
-   * Converte qualquer conteúdo de mensagem em uma stanza <message> pronta para transmissão
+   * Converte qualquer conteúdo de mensagem suportado em uma stanza `<message>` pronta para transmissão via WebSocket.
+   *
+   * @param jid - Destinatário da mensagem (JID de usuário ou grupo).
+   * @param content - Objeto de conteúdo contendo o tipo da mensagem (texto, imagem, áudio, etc).
+   * @param options - Opções complementares de envio, como citação (`quoted`) ou timestamp personalizado.
+   * @returns Objeto contendo o nó binário formatado (`node`) e o identificador único gerado para a mensagem (`messageId`).
+   * @example
+   * ```ts
+   * // Mensagem de texto
+   * const { node, messageId } = await MessageBuilder.buildMessageNode('5511999999999@s.whatsapp.net', {
+   *   text: 'Olá mundo!'
+   * })
+   *
+   * // Mensagem de imagem com legenda
+   * const { node, messageId } = await MessageBuilder.buildMessageNode('5511999999999@s.whatsapp.net', {
+   *   image: Buffer.from(...),
+   *   caption: 'Foto do produto'
+   * })
+   * ```
    */
   static async buildMessageNode(
     jid: string,
@@ -176,7 +197,12 @@ export class MessageBuilder {
   }
 
   /**
-   * Resolve diferentes fontes de mídia (Buffer, Uint8Array ou URL) para um Uint8Array em memória
+   * Resolve diferentes fontes de mídia (Buffer, Uint8Array ou URL) para um Uint8Array em memória.
+   *
+   * @param source - Buffer de bytes direto, Uint8Array ou objeto `{ url: string }`.
+   * @returns Promessa com os bytes da mídia em `Uint8Array`.
+   * @throws {Error} Se o formato da fonte fornecida não for suportado.
+   * @internal
    */
   private static async resolveMediaBuffer(source: unknown): Promise<Uint8Array> {
     if (source instanceof Uint8Array) {
