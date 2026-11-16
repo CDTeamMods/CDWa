@@ -1,6 +1,6 @@
 {
   "name": "@cdteam/cdwa",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Modern, highly secure and modular WhatsApp Web Multi-Device protocol engine for Node.js and TypeScript",
   "type": "module",
   "main": "./dist/index.cjs",
