@@ -1,6 +1,8 @@
 # CDWA 🚀
 
-> Uma biblioteca moderna, modular e com foco em alta segurança e criptografia para o protocolo WhatsApp Web Multi-Device, desenhada para o ecossistema Node.js e TypeScript.
+> A modern, modular, highly secure, and cryptography-focused library for the WhatsApp Web Multi-Device protocol, designed for the Node.js and TypeScript ecosystem.
+
+[English](README.md) | [Português Brazil](README_br.md)
 
 [![NPM Version](https://img.shields.io/npm/v/%40cdteam%2Fcdwa?style=for-the-badge&logo=npm&label=npm)](https://www.npmjs.com/package/@cdteam/cdwa)
 [![License: MIT](https://img.shields.io/npm/l/%40cdteam%2Fcdwa?style=for-the-badge)](LICENSE)
@@ -8,53 +10,53 @@
 [![Stars](https://img.shields.io/github/stars/CDTeamMods/CDWa?style=for-the-badge&logo=github&logoColor=white)](#)
 
 > [!IMPORTANT]
-> **Aviso Legal / Disclaimer**: O **CDWA** é um projeto independente de código aberto e **não possui qualquer vínculo, afiliação, autorização ou endosso oficial do WhatsApp LLC, da Meta Platforms, Inc.** ou de suas afiliadas. O uso do nome "WhatsApp" é feito com propósitos estritamente descritivos para indicar compatibilidade de protocolo.
+> **Legal Notice / Disclaimer**: **CDWA** is an independent open-source project and is **not affiliated, associated, authorized, endorsed by, or in any way officially connected with WhatsApp LLC, Meta Platforms, Inc.**, or any of their subsidiaries or affiliates. The name "WhatsApp" is used strictly for descriptive purposes to indicate protocol compatibility.
 
 ---
 
-## 🌐 Site da Documentação Oficial
+## 🌐 Official Documentation Website
 
-Acesse nosso portal interativo completo com todos os guias, exemplos e especificações da API no **GitHub Pages**:
+Access our comprehensive interactive documentation portal with all guides, examples, and API specifications on **GitHub Pages**:
 
 👉 **[https://cdteammods.github.io/CDWa/](https://cdteammods.github.io/CDWa/)**
 
-### 📑 Navegação Direta no Site:
-* 🚀 **[Início Rápido](https://cdteammods.github.io/CDWa/index.html)**: Instalação, setup e primeiro bot conectado via QR Code.
-* [Segurança](https://cdteammods.github.io/CDWa/safety.html): Fila anti-flood com simulação de digitação humana e blue ticks.
-* 🔒 **[Arquitetura & Criptografia](https://cdteammods.github.io/CDWa/architecture.html)**: Noise Protocol Handshake, WABinary e criptografia at-rest.
-* 📩 **[Envio de Mensagens](https://cdteammods.github.io/CDWa/sending-messages.html)**: Guia completo para textos, fotos, vídeos, notas de voz (PTT), GPS, contatos e reações.
-* 📡 **[Eventos & Conexão](https://cdteammods.github.io/CDWa/sending-messages.html)**: Monitoramento de status, reconexão automática e mensagens recebidas.
-* 🔑 **[Autenticação & QR Code](https://cdteammods.github.io/CDWa/authentication.html)**: Como conectar ao WhatsApp, emitir o QR Code no terminal e proteger tokens com AES-256-GCM.
-* ⚡ **[Cache de Chaves (makeCacheableSignalKeyStore)](https://cdteammods.github.io/CDWa/cache-store.html)**: Camada de cache em memória para redução drástica de E/S em disco e alta performance.
+### 📑 Direct Links to Documentation:
+* 🚀 **[Quick Start](https://cdteammods.github.io/CDWa/index.html)**: Installation, setup, and first bot connected via QR Code.
+* 🛡️ **[Safety](https://cdteammods.github.io/CDWa/safety.html)**: Anti-flood queue with human-like typing simulation and blue ticks.
+* 🔒 **[Architecture & Cryptography](https://cdteammods.github.io/CDWa/architecture.html)**: Noise Protocol Handshake, WABinary, and at-rest encryption.
+* 📩 **[Sending Messages](https://cdteammods.github.io/CDWa/sending-messages.html)**: Complete guide for text, photos, videos, voice notes (PTT), location, contacts, and reactions.
+* 📡 **[Events & Connection](https://cdteammods.github.io/CDWa/events.html)**: Status monitoring, automatic reconnection, and incoming messages.
+* 🔑 **[Authentication & QR Code](https://cdteammods.github.io/CDWa/authentication.html)**: How to connect to WhatsApp, display terminal QR code, and protect tokens with AES-256-GCM.
+* ⚡ **[Key Caching (makeCacheableSignalKeyStore)](https://cdteammods.github.io/CDWa/cache-store.html)**: In-memory cache layer for drastic disk I/O reduction and high performance.
 
 ---
 
-## ⚡ Por que escolher o CDWA?
+## ⚡ Why Choose CDWA?
 
-Inspirada e reconstruída a partir dos conceitos pioneiros do [WhiskeySockets/Baileys](https://github.com/WhiskeySockets/Baileys), o **CDWA** soluciona as principais deficiências históricas:
+Inspired by and rebuilt from the pioneering concepts of [WhiskeySockets/Baileys](https://github.com/WhiskeySockets/Baileys), **CDWA** solves key historical pain points:
 
-| Recurso | Baileys Clássico | CDWA |
+| Feature | Classic Baileys | CDWA |
 | :--- | :--- | :--- |
-| **Segurança e Confiabilidade** | Disparo a frio instantâneo | **Simulação de digitação humana + Fila Anti-Flood** |
-| **Armazenamento de Credenciais** | JSONs em texto plano no disco (vulnerável) | **Criptografia At-Rest com AES-256-GCM + KDF** |
-| **Primitivas Criptográficas** | Libs legadas e heterogêneas | **`@noble/curves` (X25519) auditado e puro** |
-| **Tipagem TypeScript** | Histórico com muitos tipos `any` | **Modo Estrito (Strict Mode) de ponta a ponta** |
-| **Vazamento de Memória** | Acúmulo de listeners em conexões longas | **Ciclo de vida determinístico e buffers limpos** |
-| **Desempenho de E/S de Chaves** | Requer plugins externos | **`makeCacheableSignalKeyStore` nativo com cache LRU em memória** |
-| **Empacotamento** | CommonJS predominante | **Dual Export moderno (ESM nativo + CJS via tsup)** |
+| **Safety & Reliability** | Instant cold burst dispatch | **Human-like typing simulation + Anti-Flood queue** |
+| **Credential Storage** | Plaintext JSON on disk (vulnerable) | **At-Rest Encryption with AES-256-GCM + KDF** |
+| **Cryptographic Primitives** | Legacy & heterogeneous libraries | **Audited, pure `@noble/curves` (X25519)** |
+| **TypeScript Typing** | Legacy codebase with many `any` types | **Strict Mode end-to-end** |
+| **Memory Leaks** | Listener accumulation during long sessions | **Deterministic lifecycle & clean buffers** |
+| **Key I/O Performance** | Requires external plugins | **Native `makeCacheableSignalKeyStore` with in-memory LRU cache** |
+| **Packaging** | Predominantly CommonJS | **Modern Dual Export (Native ESM + CJS via tsup)** |
 
 ---
 
-## ⚖️ Aviso Legal (Disclaimer)
+## ⚖️ Legal Disclaimer
 
-Este projeto é desenvolvido de forma independente como software livre e de código aberto:
+This project is independently developed as free and open-source software:
 
-* O **CDWA** **não é afiliado, associado, autorizado, homologado, endossado ou de qualquer forma oficialmente conectado ao WhatsApp LLC, à Meta Platforms, Inc.** ou a qualquer uma de suas subsidiárias ou empresas controladoras.
-* O serviço e site oficial do WhatsApp podem ser acessados em [https://whatsapp.com](https://whatsapp.com).
-* "WhatsApp", bem como nomes, marcas comerciais, logotipos e símbolos correlatos, são marcas registradas de titularidade da Meta Platforms, Inc. e de seus respectivos detentores.
+* **CDWA** is **not affiliated, associated, authorized, endorsed by, or in any way officially connected with WhatsApp LLC, Meta Platforms, Inc.**, or any of their subsidiaries or affiliates.
+* The official WhatsApp service and website can be accessed at [https://whatsapp.com](https://whatsapp.com).
+* "WhatsApp" and related names, trademarks, logos, and emblems are registered trademarks of Meta Platforms, Inc. and their respective owners.
 
 ---
 
-## 📄 Licença
+## 📄 License
 
-Distribuído sob a licença **MIT**. Veja [LICENSE](LICENSE) para mais informações.
+Distributed under the **MIT** license. See [LICENSE](LICENSE) for more information.

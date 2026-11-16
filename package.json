@@ -47,6 +47,7 @@
     "dist",
     "proto",
     "README.md",
+    "README_br.md",
     "LICENSE"
   ],
   "scripts": {
@@ -86,6 +87,14 @@
     "@noble/hashes": "^1.6.0",
     "protobufjs": "^7.4.0",
     "ws": "^8.18.0"
+  },
+  "peerDependencies": {
+    "qrcode-terminal": "^0.12.0"
+  },
+  "peerDependenciesMeta": {
+    "qrcode-terminal": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

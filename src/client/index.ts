@@ -3,7 +3,6 @@ import { WhatsAppSocket } from '../socket/index.js'
 import { SignalEngine } from '../signal/index.js'
 import { BinaryProtocol } from '../binary/index.js'
 import { MessageBuilder, type AnyMessageContent, type MessageOptions } from '../messages/index.js'
-import { useSecureAuthState } from '../auth/index.js'
 import { SafeMessageQueue, PresenceSimulator, type PresenceType } from '../safety/index.js'
 import type { SocketConfig, AuthenticationState, ConnectionUpdate, BinaryNode } from '../types/index.js'
 
